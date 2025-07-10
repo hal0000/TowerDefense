@@ -23,7 +23,7 @@ namespace TowerDefense.Controller
         {
             _flaggedForRecycle = false;
             _waypointIndex = 0;
-            if (_waypoints != null && _waypoints.Count > 0)  transform.position = _waypoints[0];
+            if (_waypoints != null && _waypoints.Count > 0) transform.position = _waypoints[0];
         }
 
         public void Initialize(EnemyModel model, IReadOnlyList<Vector3> waypoints)
@@ -46,7 +46,7 @@ namespace TowerDefense.Controller
             Vector3 target = _waypoints[_waypointIndex];
             Vector3 delta = target - pos;
             float sqrMag = delta.sqrMagnitude;
-            if (sqrMag < 0.0001f)
+            if (sqrMag < 0.001f)
             {
                 _waypointIndex++;
                 return;
@@ -54,7 +54,7 @@ namespace TowerDefense.Controller
 
             float invMag = TypeExtensions.InvSqrt(sqrMag);
             Vector3 dir = delta * invMag;
-            float step = Model.Speed * Time.deltaTime;
+            float step = Model.Speed *  TimeManager.DeltaTime;
             pos += dir * step;
             t.forward = dir;
             t.position = pos;
@@ -89,8 +89,8 @@ namespace TowerDefense.Controller
         {
             // if (other.CompareTag("Goal"))
             // {
-            //     Win();
-            //     Die();
+            // Win();
+            // Die();
             // }
         }
     }
