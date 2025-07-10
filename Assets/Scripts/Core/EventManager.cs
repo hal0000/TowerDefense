@@ -28,5 +28,22 @@ namespace TowerDefense.Core
             IsPaused = isPaused;
             OnPauseChanged?.Invoke(isPaused);
         }
+        
+        /// <summary>
+        /// Delegate for handling nickname change events.
+        /// </summary>
+        public delegate void TimeMultiplierChanged(float value);
+        /// <summary>
+        /// Event triggered when a TimeMultiplier change is requested.
+        /// </summary>
+        public static event TimeMultiplierChanged OnTimeChanged;
+
+        /// <summary>
+        /// Notifies subscribers that a TimeMultiplier change is needed.
+        /// </summary>
+        public static void TimeMultiplierEventNeeded(float value)
+        {
+            OnTimeChanged?.Invoke(value);
+        }
     }
 }
