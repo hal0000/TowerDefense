@@ -1,15 +1,16 @@
 using System.Collections.Generic;
+using TowerDefense.Controller;
+using TowerDefense.Model;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace TowerDefense.Core
 {
-    public class GridInputHandler : MonoBehaviourExtra
+    public class GridInputHandler : MonoBehaviour
     {
-        [Header("References")]
-        [SerializeField] private GridManager _gridManager;
-        [SerializeField] private GameObject _ghostPrefab;
-
+        private GridManager _gridManager;
+        private GameObject _ghostPrefab;
+        private TowerModel _towerModel;
         // simple 2×2 test footprint; replace with your dynamic footprint
         private static readonly string[] _debugFootprint = { "11", "11" };
 
@@ -18,16 +19,27 @@ namespace TowerDefense.Core
         private GameObject _ghostInstance;
         private int _originPacked;
         private List<int> _lastHighlighted = new List<int>();
-
+        private bool _startHover = false;
         void Awake()
         {
             _cam = Camera.main;
             _groundPlane = new Plane(Vector3.up, Vector3.zero);
+            if (GameManager.Instance.CurrentScene is GameScene gs)
+                _gridManager = gs.GridManager;
         }
 
-        protected override void Tick()
+         void Update()
         {
+            if (!_startHover) return;
             HandleGhostDrag();
+        }
+        public void StartHover(GameObject prefab, TowerModel model)
+        {
+            
+            _ghostPrefab = prefab;
+            _towerModel = model;
+            if (_ghostInstance != null) Destroy(_ghostInstance);
+            _startHover = true;
         }
 
         private void HandleGhostDrag()
@@ -88,7 +100,6 @@ namespace TowerDefense.Core
             }
 
             // 7) highlight footprint
-            Color tint = valid ? Color.green : Color.red;
             foreach (int p in footprintCells)
             {
                 var cv = _gridManager.GetCellView(p);
@@ -107,6 +118,8 @@ namespace TowerDefense.Core
             Vector3 center = _gridManager.GetCellCenter(packed);
             Quaternion rot = _ghostPrefab.transform.rotation;
             _ghostInstance = Instantiate(_ghostPrefab, center,rot);
+            _ghostInstance.GetComponent<TowerController>().Initialize(_towerModel);
+            _ghostInstance.SetActive(true);
         }
 
         private void CommitOrClear(bool valid, List<int> footprintCells)
@@ -122,11 +135,13 @@ namespace TowerDefense.Core
                 }
 
                 // 2) Instantiate exactly one building at the ghost’s position
-                Instantiate(_ghostInstance,_ghostInstance.transform.position,_ghostInstance.transform.rotation);
+                var go = Instantiate(_ghostInstance,_ghostInstance.transform.position,_ghostInstance.transform.rotation);
+                go.GetComponent<TowerController>().Initialize(_towerModel);
 
                 // 3) Clean up the ghost
                 Destroy(_ghostInstance);
                 _ghostInstance = null;
+                _startHover = false;
             }
             else
             {

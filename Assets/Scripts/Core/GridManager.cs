@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TowerDefense.Controller;
 using UnityEngine;
 using TowerDefense.Model;
 
@@ -10,40 +11,72 @@ namespace TowerDefense.Core
     {
         [Header("Grid Settings")]
         [Tooltip("Prefab that contains a CellView component")]
-        [SerializeField] private CellView CellPrefab;
+        [SerializeField] private CellController CellPrefab;
 
-        private CellView[] _cells;
+        private CellController[] _cells;
         private int _gridWidth, _gridHeight;
+        /// <summary>
+        /// </summary>
+        private Vector3[] _currentPathPositions; 
+        public IReadOnlyList<Vector3> CurrentPathPositions => _currentPathPositions;
 
         /// <summary>
         /// A simple random‐axis walk from (0,0) → (w-1,h-1).
         /// </summary>
         private List<int> ComputePath(int w, int h)
         {
-            var path = new List<int>();
+            var fullPath = new List<int>();
+            var corners = new List<int>();
+
             int x = 0, y = 0, tx = w - 1, ty = h - 1;
-            path.Add(CoordPacker.Pack(x, y));
+            fullPath.Add(CoordPacker.Pack(x, y));
+            corners.Add(fullPath[0]);
+
+            int prevX = x, prevY = y;
+            Vector2Int lastDir = Vector2Int.zero;
+
             while (x != tx || y != ty)
             {
                 bool canX = x != tx, canY = y != ty;
                 if (canX && (!canY || Random.value < 0.5f)) x += tx > x ? 1 : -1;
                 else y += ty > y ? 1 : -1;
-                path.Add(CoordPacker.Pack(x, y));
+                int packed = CoordPacker.Pack(x, y);
+                fullPath.Add(packed);
+
+                // detecting direction change for finding curve/corner
+                var dir = new Vector2Int(x - prevX, y - prevY);
+                if (lastDir != Vector2Int.zero && dir != lastDir)
+                {
+                    // record the _previous_ cell as a corner
+                    corners.Add(CoordPacker.Pack(prevX, prevY));
+                }
+
+                lastDir = dir;
+                prevX = x;
+                prevY = y;
             }
-            return path;
+
+            // lastly add the final cell too
+            corners.Add(fullPath[^1]);
+
+            // convert corners → world‐space and stash
+            _currentPathPositions = new Vector3[corners.Count];
+            for (int i = 0; i < corners.Count; i++) _currentPathPositions[i] = GetCellCenter(corners[i]);
+            return fullPath;
         }
+
         
-        public void BuildGrid(int w, int h)
+        public Vector3[] BuildGrid(int w, int h)
         {
             // if we already built once just reset fields
             if (_cells != null && _cells.Length > 0)
             {
                 ResetGrid();
-                return;
+                return _currentPathPositions;
             }
             _gridWidth = w;
             _gridHeight = h;
-            _cells = new CellView[w * h];
+            _cells = new CellController[w * h];
 
             var pathSet = new HashSet<int>(ComputePath(w, h));
             Quaternion rot = CellPrefab.gameObject.transform.rotation;
@@ -65,6 +98,7 @@ namespace TowerDefense.Core
                     _cells[index] = go;
                 }
             }
+            return _currentPathPositions;
         }
         private void ResetGrid()
         {
@@ -95,7 +129,7 @@ namespace TowerDefense.Core
             return TryGetIndex(x, y, out _);
         }
 
-        public CellView GetCellView(int packed)
+        public CellController GetCellView(int packed)
         {
             int x = CoordPacker.UnpackX(packed);
             int y = CoordPacker.UnpackY(packed);

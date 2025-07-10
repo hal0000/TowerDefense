@@ -3,6 +3,7 @@
 // All rights reserved.
 // --------------------------------------------------------------------------------------------------------------------
 
+using TowerDefense.Network;
 using UnityEngine;
 
 namespace TowerDefense.Core
@@ -18,7 +19,12 @@ namespace TowerDefense.Core
         /// Singleton instance of the GameManager for global access.
         /// </summary>
         public static GameManager Instance { get; private set; }
-
+        /// <summary>
+        /// Mock Api class
+        /// </summary>
+        public Api Api;
+        
+        public BaseScene CurrentScene;
         private void Awake()
         {
             Application.targetFrameRate = 120;
@@ -30,6 +36,8 @@ namespace TowerDefense.Core
             {
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
+                Api = new Api();
+
             }
         }
     }

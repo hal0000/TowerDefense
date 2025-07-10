@@ -9,5 +9,11 @@ namespace TowerDefense.Model
             Playing, // path is marked, game is “in play”
             Endgame // reached destination or aborted
         }
+        public enum EnemyType
+        {
+            Vogel,
+            Hund,
+            Katze
+        }
     }
 }

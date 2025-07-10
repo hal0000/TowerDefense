@@ -7,6 +7,7 @@ using System;
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using TMPro;
+using TowerDefense.Core;
 using TowerDefense.UI.Binding;
 using UnityEngine;
 
@@ -116,7 +117,7 @@ namespace TowerDefense.UI
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[{name}] TextBinder: Format error - {ex.Message}");
+                LoggerExtra.LogError($"[{name}] TextBinder: Format error - {ex.Message}");
                 _txt.text = string.Join(" / ", values);
             }
         }

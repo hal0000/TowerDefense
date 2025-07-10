@@ -1,23 +1,23 @@
 using TowerDefense.Model;
 using UnityEngine;
 
-namespace TowerDefense.Core
+namespace TowerDefense.Controller
 {
     /// <summary>
     /// Handles a cell’s visual state based on its CellModel,
     /// having the per‐instance color in an instanced shader. my personal preference for not breaking the batch
     /// </summary>
     [RequireComponent(typeof(Renderer))]
-    public class CellView : MonoBehaviour
+    public class CellController : MonoBehaviour
     {
         public CellModel Model { get; private set; }
 
         [Header("Tile Colors")]
-        [SerializeField] private Color _oddColor = new Color(60 / 255f, 147 / 255f, 45 / 255f, 1f);
-        [SerializeField] private Color _evenColor = new Color(29 / 255f, 103 / 255f, 16 / 255f, 1f);
-        [SerializeField] private Color _pathColor = new Color(217 / 255f, 162 / 255f, 0 / 255f, 1f);
-        [SerializeField] private Color _occupiedColor = Color.red;
-        [SerializeField] private Color _availableColor = Color.green;
+        private readonly Color _oddColor = new Color(60 / 255f, 147 / 255f, 45 / 255f, 1f);
+        private readonly Color _evenColor = new Color(29 / 255f, 103 / 255f, 16 / 255f, 1f);
+        private readonly Color _pathColor = new Color(217 / 255f, 162 / 255f, 0 / 255f, 1f);
+        private readonly Color _occupiedColor = Color.red;
+        private readonly Color _availableColor = Color.green;
 
         private Color _defaultColor;
         private Renderer _renderer;
