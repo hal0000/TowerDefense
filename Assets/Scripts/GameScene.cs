@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TowerDefense.Core;
@@ -15,14 +16,14 @@ namespace TowerDefense
         public GridManager GridManager; 
         public GridInputHandler GridInputHandler;
         public EnemyPool EnemyPool;
-        public Bindable<string> State { get; private set; }
+        public Bindable<string> GameStateText { get; private set; }
+        public Bindable<int> GameStateIndex { get; } = new();
         [HideInInspector] public Enums.GameState GameState = Enums.GameState.Nothing;
         public List<TowerController> Towers = new List<TowerController>();
         public List<EnemyController> Enemys;
 
         public TowerController SelectedTower;
         private List<EnemyModel> _enemyModels;
-        private Vector3[] _enemyPath;
 
         public override void Awake()
         {
@@ -34,23 +35,39 @@ namespace TowerDefense
         public override void Start()
         {
             base.Start();
-            GameState = Enums.GameState.Nothing;
+            GameStateChanged(Enums.GameState.Nothing);
             SetBindingData();
             GetTowerList();
         }
 
+        public void GameStateChanged(Enums.GameState newState)
+        {
+            switch (newState)
+            {
+                case Enums.GameState.Nothing:
+                    break;
+                case Enums.GameState.Preparing:
+                    break;
+                case Enums.GameState.Playing:
+                    break;
+                case Enums.GameState.Endgame:
+                    break;
+            
+            }
+            GameState = newState;
+            GameStateText.Value = GameState.ToString();
+            GameStateIndex.Value = (int)newState;
+        }
         public void StartGame()
         {
-            _enemyPath = GridManager.BuildGrid(30, 30);
-            GameState = Enums.GameState.Preparing;
-            State.Value = GameState.ToString();
+            GridManager.BuildGrid(30, 30);
+            GameStateChanged(Enums.GameState.Preparing);
             GetEnemyList();
         }
 
         public void InitiateRound()
         {
-            GameState = Enums.GameState.Playing;
-            State.Value = GameState.ToString();
+            GameStateChanged(Enums.GameState.Playing);
             StartCoroutine(SpawnWave(10, 5f));
         }
 
@@ -102,7 +119,11 @@ namespace TowerDefense
         }
 
 #region BindingContextInterface
-        public void SetBindingData() => State = new Bindable<string>(GameState.ToString());
+
+        public void SetBindingData()
+        {
+            GameStateText = new Bindable<string>(GameState.ToString());
+        }
         public void RegisterBindingContext() => BindingContextRegistry.Register(GetType().Name, this);
         public void UnregisterBindingContext() => BindingContextRegistry.Unregister(GetType().Name, this);
 #endregion
