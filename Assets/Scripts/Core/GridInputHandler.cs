@@ -8,18 +8,17 @@ namespace TowerDefense.Core
 {
     public class GridInputHandler : MonoBehaviour
     {
-        private GridManager _gridManager;
-        private GameObject _ghostPrefab;
-        private TowerModel _towerModel;
-        // simple 2×2 test footprint; replace with your dynamic footprint
-        private static readonly string[] _debugFootprint = { "11", "11" };
+        GridManager _gridManager;
+        GameObject _ghostPrefab;
+        TowerModel _towerModel;
+        Camera _cam;
+        Plane _groundPlane;
+        GameObject _ghostInstance;
+        int _originPacked;
+        readonly List<int> _lastHighlighted = new List<int>();
+        readonly List<int> _footprintCells = new List<int>();
+        bool _startHover;
 
-        private Camera _cam;
-        private Plane _groundPlane;
-        private GameObject _ghostInstance;
-        private int _originPacked;
-        private List<int> _lastHighlighted = new List<int>();
-        private bool _startHover = false;
         void Awake()
         {
             _cam = Camera.main;
@@ -28,68 +27,70 @@ namespace TowerDefense.Core
                 _gridManager = gs.GridManager;
         }
 
-         void Update()
+        void Update()
         {
-            if (!_startHover) return;
-            HandleGhostDrag();
+            if (_startHover)
+                HandleGhostDrag();
         }
+
         public void StartHover(GameObject prefab, TowerModel model)
         {
-            
             _ghostPrefab = prefab;
             _towerModel = model;
-            if (_ghostInstance != null) Destroy(_ghostInstance);
+
+            if (_ghostInstance != null)
+                _ghostInstance.SetActive(false);
+
+            _lastHighlighted.Clear();
             _startHover = true;
         }
 
-        private void HandleGhostDrag()
+        void HandleGhostDrag()
         {
-            // 1) read mouse
             if (Mouse.current == null) return;
-            Vector2 mp = Mouse.current.position.ReadValue();
-            Ray ray = _cam.ScreenPointToRay(mp);
+            var mp = Mouse.current.position.ReadValue();
+            var ray = _cam.ScreenPointToRay(mp);
+            if (!_groundPlane.Raycast(ray, out float enter)) { ClearGhost(); return; }
 
-            // 2) project into y=0 plane
-            if (!_groundPlane.Raycast(ray, out float enter))
-            {
-                ClearGhost();
-                return;
-            }
             Vector3 worldHit = ray.GetPoint(enter);
+            if (!_gridManager.WorldToPackedCoord(worldHit, out int packed)) { ClearGhost(); return; }
 
-            // 3) world→grid packed‐int
-            if (!_gridManager.WorldToPackedCoord(worldHit, out int packed))
+            var center = _gridManager.GetCellCenter(packed);
+
+            if (_ghostInstance == null)
             {
-                ClearGhost();
-                return;
+                _ghostInstance = Instantiate(
+                    _ghostPrefab,
+                    center,
+                    _ghostPrefab.transform.rotation
+                );
+                _ghostInstance.GetComponent<TowerController>().Initialize(_towerModel);
+            }
+            else
+            {
+                _ghostInstance.transform.SetPositionAndRotation(
+                    center,
+                    _ghostPrefab.transform.rotation
+                );
+                _ghostInstance.SetActive(true);
             }
 
-            // 4) if ghost not spawned or moved, (re)create it
-            if (_ghostInstance == null || packed != _originPacked)
-            {
-                _originPacked = packed;
-                ClearGhost(); // clear any old highlights
-                SpawnGhostAt(packed);
-            }
+            _originPacked = packed;
+            ClearGhostHighlights();
 
-            // 5) gather footprint cells
-            var footprintCells = new List<int>();
+            // build footprint from TowerModel.byte[] grid
+            _footprintCells.Clear();
+            int rows = _towerModel.Rows, cols = _towerModel.Cols;
             int ox = CoordPacker.UnpackX(packed),
                 oy = CoordPacker.UnpackY(packed);
 
-            for (int row = 0; row < _debugFootprint.Length; row++)
-            {
-                string line = _debugFootprint[row];
-                for (int col = 0; col < line.Length; col++)
-                {
-                    if (line[col] == '1')
-                        footprintCells.Add(CoordPacker.Pack(ox + col, oy + row));
-                }
-            }
+            for (int r = 0; r < rows; r++)
+                for (int c = 0; c < cols; c++)
+                    if (_towerModel.GetCell(r, c) == 1)
+                        _footprintCells.Add(CoordPacker.Pack(ox + c, oy + r));
 
-            // 6) test validity
             bool valid = true;
-            foreach (int p in footprintCells)
+            foreach (int p in _footprintCells)
             {
                 var cv = _gridManager.GetCellView(p);
                 if (cv == null || cv.Model.IsOccupied || cv.Model.IsPath)
@@ -99,75 +100,61 @@ namespace TowerDefense.Core
                 }
             }
 
-            // 7) highlight footprint
-            foreach (int p in footprintCells)
+            foreach (int p in _footprintCells)
             {
                 var cv = _gridManager.GetCellView(p);
                 if (cv != null)
                     cv.Highlight(valid);
+                _lastHighlighted.Add(p);
             }
-            _lastHighlighted.AddRange(footprintCells);
 
-            // 8) on mouse-up, commit or clear
             if (Mouse.current.leftButton.wasReleasedThisFrame)
-                CommitOrClear(valid, footprintCells);
+                CommitOrClear(valid);
         }
 
-        private void SpawnGhostAt(int packed)
-        {
-            Vector3 center = _gridManager.GetCellCenter(packed);
-            Quaternion rot = _ghostPrefab.transform.rotation;
-            _ghostInstance = Instantiate(_ghostPrefab, center,rot);
-            _ghostInstance.GetComponent<TowerController>().Initialize(_towerModel);
-            _ghostInstance.SetActive(true);
-        }
-
-        private void CommitOrClear(bool valid, List<int> footprintCells)
+        void CommitOrClear(bool valid)
         {
             if (valid && _ghostInstance != null)
             {
-                // 1) Mark every footprint cell as occupied
-                foreach (int p in footprintCells)
+                foreach (int p in _footprintCells)
                 {
                     var cv = _gridManager.GetCellView(p);
                     if (cv != null)
                         cv.Model.SetOccupied(true);
                 }
 
-                // 2) Instantiate exactly one building at the ghost’s position
-                var go = Instantiate(_ghostInstance,_ghostInstance.transform.position,_ghostInstance.transform.rotation);
+                var go = Instantiate(
+                    _ghostInstance,
+                    _ghostInstance.transform.position,
+                    _ghostInstance.transform.rotation
+                );
                 go.GetComponent<TowerController>().Initialize(_towerModel);
 
-                // 3) Clean up the ghost
-                Destroy(_ghostInstance);
-                _ghostInstance = null;
+                _ghostInstance.SetActive(false);
                 _startHover = false;
             }
-            else
+            else if (_ghostInstance != null)
             {
-                Destroy(_ghostInstance);
-                _ghostInstance = null;
+                _ghostInstance.SetActive(false);
             }
 
             ClearGhostHighlights();
         }
 
-        private void ClearGhost()
+        void ClearGhost()
         {
             if (_ghostInstance != null)
-            {
-                Destroy(_ghostInstance);
-                _ghostInstance = null;
-            }
+                _ghostInstance.SetActive(false);
             ClearGhostHighlights();
         }
 
-        private void ClearGhostHighlights()
+        void ClearGhostHighlights()
         {
             foreach (int p in _lastHighlighted)
             {
                 var cv = _gridManager.GetCellView(p);
-                if (cv != null) cv.ResetHighlight();
+                if (cv != null)
+                    cv.ResetHighlight();
             }
             _lastHighlighted.Clear();
         }

@@ -68,12 +68,7 @@ namespace TowerDefense
                     LoggerExtra.LogWarning($"GameScene.GetTowerList(): no prefab assigned at index {idx}");
                     continue;
                 }
-                var prefab = Towers[idx];
-                var go = Instantiate(prefab, Vector3.zero, prefab.transform.rotation);
-                if(go.TryGetComponent<TowerController>(out var tempController))
-                {
-                    tempController.Initialize(model);
-                }
+                Towers[idx].Initialize(model);
             }
         }
 
