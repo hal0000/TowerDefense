@@ -16,6 +16,7 @@ namespace TowerDefense
         public GridManager GridManager; 
         public GridInputHandler GridInputHandler;
         public EnemyPool EnemyPool;
+        public BulletPool BulletPool;
         public Bindable<string> GameStateText { get; private set; }
         public Bindable<int> GameStateIndex { get; } = new();
         [HideInInspector] public Enums.GameState GameState = Enums.GameState.Nothing;
@@ -35,9 +36,9 @@ namespace TowerDefense
         public override void Start()
         {
             base.Start();
-            GameStateChanged(Enums.GameState.Nothing);
             SetBindingData();
             GetTowerList();
+            GameStateChanged(Enums.GameState.Nothing);
         }
 
         public void GameStateChanged(Enums.GameState newState)
