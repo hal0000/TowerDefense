@@ -1,7 +1,40 @@
+using System.Collections.Generic;
+using UnityEngine;
+using TowerDefense.Controller;
+
 namespace TowerDefense.Pooling
 {
-    public class BulletPool
+    public sealed class BulletPool : MonoBehaviour
     {
-        
+        [SerializeField] private BulletController _prefab;
+        [SerializeField] private int _poolSize = 20;
+
+        private Queue<BulletController> _pool;
+
+        void Awake()
+        {
+            _pool = new Queue<BulletController>(_poolSize);
+            for (int i = 0; i < _poolSize; i++)
+            {
+                var b = Instantiate(_prefab, transform);
+                b.gameObject.SetActive(false);
+                _pool.Enqueue(b);
+            }
+        }
+
+        public BulletController GetBullet()
+        {
+            BulletController b;
+            b = _pool.Count > 0 ? _pool.Dequeue() : Instantiate(_prefab, transform);
+            b.OnSpawn();
+            b.gameObject.SetActive(true);
+            return b;
+        }
+
+        public void ReturnBullet(BulletController bullet)
+        {
+            bullet.gameObject.SetActive(false);
+            _pool.Enqueue(bullet);
+        }
     }
 }
