@@ -11,6 +11,7 @@ namespace TowerDefense.Core
         GridManager _gridManager;
         GameObject _ghostPrefab;
         TowerModel _towerModel;
+        GameScene _scene;
         Camera _cam;
         Plane _groundPlane;
         GameObject _ghostInstance;
@@ -23,8 +24,9 @@ namespace TowerDefense.Core
         {
             _cam = Camera.main;
             _groundPlane = new Plane(Vector3.up, Vector3.zero);
-            if (GameManager.Instance.CurrentScene is GameScene gs)
-                _gridManager = gs.GridManager;
+            if (GameManager.Instance.CurrentScene is not GameScene gs) return;
+            _scene = gs;
+            _gridManager = gs.GridManager;
         }
 
         void Update()
@@ -122,14 +124,10 @@ namespace TowerDefense.Core
                     if (cv != null)
                         cv.Model.SetOccupied(true);
                 }
-
-                var go = Instantiate(
-                    _ghostInstance,
-                    _ghostInstance.transform.position,
-                    _ghostInstance.transform.rotation
-                );
+                var go = Instantiate(_ghostInstance, _ghostInstance.transform.position, _ghostInstance.transform.rotation);
+                
                 go.GetComponent<TowerController>().Initialize(_towerModel);
-
+                _scene.TowerPlaced();
                 _ghostInstance.SetActive(false);
                 _startHover = false;
             }

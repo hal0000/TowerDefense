@@ -11,6 +11,7 @@ namespace TowerDefense.Model
             {
               ""Index"": 0,
               ""Name"": ""SmallHouse"",
+              ""Gold"": 500,
               ""Footprint"": [ ""11"", ""11"" ],
               ""Range"": 3,
               ""Damage"": 10,
@@ -20,6 +21,7 @@ namespace TowerDefense.Model
             {
               ""Index"": 1,
               ""Name"": ""LShape"",
+              ""Gold"": 1000,
               ""Footprint"": [ ""101"", ""101"", ""111"" ],
               ""Range"": 4,
               ""Damage"": 15,

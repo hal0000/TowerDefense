@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using TowerDefense.Core;
+using TowerDefense.UI.Binding;
 using UnityEngine;
 
 namespace TowerDefense.Model
@@ -11,6 +12,7 @@ namespace TowerDefense.Model
 #region JSONKEYS
         public int Index;
         public string Name;
+        public int Gold;
         public string[] Footprint;
         public int Range;
         public int Damage;
@@ -25,6 +27,9 @@ namespace TowerDefense.Model
         [NonSerialized] private byte[] _grid; // flat (row*cols + col)
         [NonSerialized] private int _packedPosition;
 #endregion
+
+public Bindable<string> NameBinder { get; } = new();
+public Bindable<int> GoldBinder { get; } = new();
 
 
         /// <summary>
@@ -66,6 +71,8 @@ namespace TowerDefense.Model
         public void OnAfterDeserialize()
         {
             // build our fast-access byte[] from the string rows
+            GoldBinder.Value = Gold;
+            NameBinder.Value = Name;
             _rows = Footprint?.Length ?? 0;
             _cols = _rows > 0 ? Footprint[0].Length : 0;
             _grid = new byte[_rows * _cols];
