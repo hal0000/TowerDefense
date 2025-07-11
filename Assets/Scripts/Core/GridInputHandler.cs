@@ -11,11 +11,9 @@ namespace TowerDefense.Core
         GridManager _gridManager;
         GameObject _ghostPrefab;
         TowerModel _towerModel;
-        GameScene _scene;
         Camera _cam;
         Plane _groundPlane;
         GameObject _ghostInstance;
-        int _originPacked;
         readonly List<int> _lastHighlighted = new List<int>();
         readonly List<int> _footprintCells = new List<int>();
         bool _startHover;
@@ -24,9 +22,7 @@ namespace TowerDefense.Core
         {
             _cam = Camera.main;
             _groundPlane = new Plane(Vector3.up, Vector3.zero);
-            if (GameManager.Instance.CurrentScene is not GameScene gs) return;
-            _scene = gs;
-            _gridManager = gs.GridManager;
+            if (GameManager.Instance.CurrentScene is GameScene gs) _gridManager = gs.GridManager;;
         }
 
         void Update()
@@ -67,7 +63,6 @@ namespace TowerDefense.Core
                 _ghostInstance.transform.SetPositionAndRotation(center, _ghostPrefab.transform.rotation); 
             }
 
-            _originPacked = packed;
             ClearGhostHighlights();
 
             // build footprint from TowerModel.byte[] grid
@@ -111,13 +106,12 @@ namespace TowerDefense.Core
                 foreach (int p in _footprintCells)
                 {
                     var cv = _gridManager.GetCellView(p);
-                    if (cv != null)
-                        cv.Model.SetOccupied(true);
+                    if (cv != null) cv.Model.SetOccupied(true);
                 }
                 var go = Instantiate(_ghostInstance, _ghostInstance.transform.position, _ghostInstance.transform.rotation);
                 
                 go.GetComponent<TowerController>().Initialize(_towerModel);
-                _scene.TowerPlaced();
+                EventManager.PlayerDidSomething(Enums.PlayerActions.SpendGold, _towerModel.Gold);
                 _ghostInstance.SetActive(false);
                 _startHover = false;
             }
