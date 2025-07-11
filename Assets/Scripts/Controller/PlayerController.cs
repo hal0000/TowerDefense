@@ -28,6 +28,10 @@ namespace TowerDefense.Controller
             {
                 case Enums.PlayerActions.GetDamage:
                     _model.Health.Value -= value;
+                    if (_model.Health.Value <= 0)
+                    {
+                        //EventManager.gamestate changed to gameover
+                    }
                     break;
                 case Enums.PlayerActions.SpendGold:
                     _model.Gold.Value -= value;
