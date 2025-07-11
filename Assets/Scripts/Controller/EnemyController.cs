@@ -34,33 +34,52 @@ namespace TowerDefense.Controller
 
         protected override void Tick()
         {
-            if (!_flaggedForRecycle && _waypointIndex >= _waypoints.Count)
+            // 1) have we reached the end?
+            var wp = _waypoints;
+            int count = wp.Count;
+            if (_waypointIndex >= count)
             {
-                _flaggedForRecycle = true;
                 Win();
                 return;
             }
 
-            var t = transform;
+            // 2) cache transform + positions
+            Transform t = transform;
             Vector3 pos = t.position;
-            Vector3 target = _waypoints[_waypointIndex];
+            Vector3 target = wp[_waypointIndex];
+
+            // 3) delta + distance²
             Vector3 delta = target - pos;
             float sqrMag = delta.sqrMagnitude;
-            if (sqrMag < 0.001f)
+            if (sqrMag < 0.0001f)
             {
                 _waypointIndex++;
                 return;
             }
 
+            // 4) build direction via fast inv-sqrt
             float invMag = TypeExtensions.InvSqrt(sqrMag);
             Vector3 dir = delta * invMag;
-            float step = Model.Speed * TimeManager.DeltaTime;
-            pos += dir * step;
-            t.forward = dir;
-            t.position = pos;
 
-            if ((target - pos).sqrMagnitude < 0.0001f)
+            // 5) compute how far we want to step this frame
+            float step = Model.Speed * TimeManager.DeltaTime;
+            float stepSqr = step * step;
+
+            // 6) clamp to not overshoot:
+            // if step would carry us beyond the waypoint, snap to it
+            if (stepSqr >= sqrMag)
+            {
+                pos = target;
                 _waypointIndex++;
+            }
+            else
+            {
+                pos += dir * step;
+            }
+
+            // 7) apply move + face direction
+            t.position = pos;
+            t.forward = dir;
         }
 
         public void ApplyDamage(int amount)
@@ -77,21 +96,13 @@ namespace TowerDefense.Controller
 
         public void Win()
         {
+            EventManager.PlayerDidSomething(Enums.PlayerActions.GetDamage,Model.Damage);
             _scene.EnemyPool.ReturnEnemy(Model.Type, this);
         }
 
         public void Die()
         {
             _scene.EnemyPool.ReturnEnemy(Model.Type, this);
-        }
-
-        private void OnTriggerEnter(Collider other)
-        {
-            // if (other.CompareTag("Goal"))
-            // {
-            // Win();
-            // Die();
-            // }
         }
     }
 }
