@@ -14,12 +14,12 @@ namespace TowerDefense.Controller
         [SerializeField] private Transform _firePoint;
         [SerializeField] private float _fireRate = 1f;
         [SerializeField] private float _bulletTravelTime = 0.2f;
+        [SerializeField] private Transform _barrel;
 
         [Header("Targeting")]
         [SerializeField] private float _range = 5f;
         [SerializeField] private LayerMask _enemyLayer = ~0;
         [SerializeField] private int _maxTargets = 8;
-
         void Awake()
         {
             if (_scene == null && GameManager.Instance.CurrentScene is GameScene gs)
@@ -54,7 +54,8 @@ namespace TowerDefense.Controller
                 break;
             }
             if (target == null) return;
-
+            _barrel.LookAt(target.position, Vector3.up);
+            _barrel.Rotate(-90f, 0f, 0f, Space.Self);
             // fire bullet
             var bullet = _scene.BulletPool.GetBullet();
             bullet.Initialize(_firePoint, target.transform, _bulletTravelTime);
