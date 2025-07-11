@@ -19,7 +19,7 @@ namespace TowerDefense.Animation
         [Range(0.1f,5f)] public float SpeedMultiplier = 1f;
 
         SpriteRenderer _graphic;
-        Sequence _sequence;
+        Tween _tween;
         bool _isAnimating;
         bool _isActive;
 
@@ -42,17 +42,14 @@ namespace TowerDefense.Animation
             if (!IsActive || _isAnimating) return;
             _isAnimating = true;
             float t = Duration / SpeedMultiplier;
-            _sequence = Sequence.Create()
-                .Group(Tween.Alpha(_graphic, MaxAlpha, MinAlpha, t, EaseType))
-                .Insert(t, Tween.Alpha(_graphic, MinAlpha, MaxAlpha, t, EaseType))
-                .SetCycles(Cycles); 
+            _tween = Tween.Alpha(_graphic, MaxAlpha, MinAlpha, t, EaseType,-1,CycleMode.Yoyo);
         }
 
         public void StopAnimation()
         {
             if (!_isAnimating) return;
             _isAnimating = false;
-            _sequence.Stop();
+            _tween.Stop();
         }
 
         public void OnParentVisibilityChanged(bool isVisible)
