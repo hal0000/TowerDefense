@@ -5,31 +5,61 @@ namespace TowerDefense.Model
     /// </summary>
     public static class EmbeddedBuildingData
     {
-        public const string TowerJson = @"
-        {
-          ""Templates"": [
-            {
-              ""Index"": 0,
-              ""Name"": ""SmallHouse"",
-              ""Gold"": 500,
-              ""Footprint"": [ ""11"", ""11"" ],
-              ""Range"": 3,
-              ""Damage"": 10,
-              ""Level"": 1,
-              ""FireRate"": 2
-            },
-            {
-              ""Index"": 1,
-              ""Name"": ""LShape"",
-              ""Gold"": 1000,
-              ""Footprint"": [ ""101"", ""101"", ""111"" ],
-              ""Range"": 4,
-              ""Damage"": 15,
-              ""Level"": 1,
-              ""FireRate"": 3
-            }
-          ]
-        }";
+      public const string TowerJson = @"
+      {
+        ""Templates"": [
+          {
+            ""Index"": 0,
+            ""Name"": ""Kunst-Team"",
+            ""Gold"": 500,
+            ""Footprint"": [ ""111"", ""010"", ""010"" ],
+            ""Range"": 3,
+            ""Damage"": 10,
+            ""Level"": 1,
+            ""FireRate"": 2
+          },
+          {
+            ""Index"": 1,
+            ""Name"": ""QA-Team"",
+            ""Gold"": 1000,
+            ""Footprint"": [ ""10"", ""10"", ""11"" ],
+            ""Range"": 4,
+            ""Damage"": 15,
+            ""Level"": 1,
+            ""FireRate"": 3
+          },
+          {
+            ""Index"": 2,
+            ""Name"": ""Entwicklung"",
+            ""Gold"": 500,
+            ""Footprint"": [ ""011"", ""110"" ],
+            ""Range"": 3,
+            ""Damage"": 10,
+            ""Level"": 1,
+            ""FireRate"": 2
+          },
+          {
+            ""Index"": 3,
+            ""Name"": ""Projektmanagement"",
+            ""Gold"": 1000,
+            ""Footprint"": [ ""101"", ""101"", ""111"" ],
+            ""Range"": 4,
+            ""Damage"": 15,
+            ""Level"": 1,
+            ""FireRate"": 3
+          },
+          {
+            ""Index"": 4,
+            ""Name"": ""Kundensupport"",
+            ""Gold"": 1000,
+            ""Footprint"": [ ""010"", ""111"", ""010"" ],
+            ""Range"": 4,
+            ""Damage"": 15,
+            ""Level"": 1,
+            ""FireRate"": 3
+          }
+        ]
+      }";
         public const string EnemyJson = @"
         {
           ""Enemies"": [

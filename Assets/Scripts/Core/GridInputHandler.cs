@@ -39,10 +39,7 @@ namespace TowerDefense.Core
         {
             _ghostPrefab = prefab;
             _towerModel = model;
-
-            if (_ghostInstance != null)
-                _ghostInstance.SetActive(false);
-
+            if (_ghostInstance != null) DestroyImmediate(_ghostInstance.gameObject);
             _lastHighlighted.Clear();
             _startHover = true;
         }
@@ -61,20 +58,13 @@ namespace TowerDefense.Core
 
             if (_ghostInstance == null)
             {
-                _ghostInstance = Instantiate(
-                    _ghostPrefab,
-                    center,
-                    _ghostPrefab.transform.rotation
-                );
-                _ghostInstance.GetComponent<TowerController>().Initialize(_towerModel);
+                _ghostInstance = Instantiate(_ghostPrefab, center, _ghostPrefab.transform.rotation);
+                if (_ghostInstance.TryGetComponent<TowerController>(out var temp)) temp.Initialize(_towerModel);
+                _ghostInstance.SetActive(true);
             }
             else
             {
-                _ghostInstance.transform.SetPositionAndRotation(
-                    center,
-                    _ghostPrefab.transform.rotation
-                );
-                _ghostInstance.SetActive(true);
+                _ghostInstance.transform.SetPositionAndRotation(center, _ghostPrefab.transform.rotation); 
             }
 
             _originPacked = packed;
@@ -133,7 +123,7 @@ namespace TowerDefense.Core
             }
             else if (_ghostInstance != null)
             {
-                _ghostInstance.SetActive(false);
+                DestroyImmediate(_ghostInstance.gameObject);
             }
 
             ClearGhostHighlights();
@@ -141,8 +131,7 @@ namespace TowerDefense.Core
 
         void ClearGhost()
         {
-            if (_ghostInstance != null)
-                _ghostInstance.SetActive(false);
+            if (_ghostInstance != null) DestroyImmediate(_ghostInstance.gameObject);
             ClearGhostHighlights();
         }
 

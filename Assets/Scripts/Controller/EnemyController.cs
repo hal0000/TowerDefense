@@ -54,7 +54,7 @@ namespace TowerDefense.Controller
 
             float invMag = TypeExtensions.InvSqrt(sqrMag);
             Vector3 dir = delta * invMag;
-            float step = Model.Speed *  TimeManager.DeltaTime;
+            float step = Model.Speed * TimeManager.DeltaTime;
             pos += dir * step;
             t.forward = dir;
             t.position = pos;

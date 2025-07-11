@@ -17,14 +17,22 @@ namespace TowerDefense
     {
         public GridManager GridManager; 
         public GridInputHandler GridInputHandler;
+        public TowerPrefabGenerator TowerPrefabGenerator;
+#region PoolRerefences
         public EnemyPool EnemyPool;
         public BulletPool BulletPool;
+#endregion
+
+#region Bindings
         public Bindable<string> GameStateText { get; private set; }
         public Bindable<int> GameStateIndex { get; } = new();
         public ListBinding<TowerModel> TowerModels { get; private set; }
+#endregion
+
+
 
         [HideInInspector] public Enums.GameState GameState = Enums.GameState.Nothing;
-        public List<TowerController> Towers = new List<TowerController>();
+        //public List<TowerController> Towers = new List<TowerController>();
         public List<EnemyController> Enemys;
         public RectTransform TowerButtonPrefab;
         public Transform TowerButtonPrefabContainer;
@@ -86,19 +94,21 @@ namespace TowerDefense
         public void GetTowerList()
         {
             List<TowerModel> models = GameManager.Instance.Api.GetBuildingTypes();
+            TowerPrefabGenerator.GenerateTowerPrefabs(models);
             TowerModels.Value = models;
-
-            ///PREFAB DATA IMPLEMENTATION
-            foreach (var model in models)
-            {
-                int idx = model.Index;
-                if (idx < 0 || idx >= Towers.Count)
-                {
-                    LoggerExtra.LogWarning($"GameScene.GetTowerList(): no prefab assigned at index {idx}");
-                    continue;
-                }
-                Towers[idx].Initialize(model);
-            }
+            // ///PREFAB DATA IMPLEMENTATION
+            // var tempList = TowerPrefabGenerator.Towers;
+            // var counter = tempList.Count;
+            // foreach (var model in models)
+            // {
+            // int idx = model.Index;
+            // if (idx < 0 || idx >= counter)
+            // {
+            // LoggerExtra.LogWarning($"GameScene.GetTowerList(): no prefab assigned at index {idx}");
+            // continue;
+            // }
+            // tempList[idx].Initialize(model);
+            // }
         }
 
         public void SetTowerButtonUI()
@@ -116,7 +126,7 @@ namespace TowerDefense
                 // force left‐center anchoring & pivot
                 btnRT.anchorMin = new Vector2(0f, 0.5f);
                 btnRT.anchorMax = new Vector2(0f, 0.5f);
-                btnRT.pivot     = new Vector2(0f, 0.5f);
+                btnRT.pivot = new Vector2(0f, 0.5f);
 
                 // position relative to left edge of container
                 btnRT.anchoredPosition = new Vector2(x, 0f);
@@ -161,7 +171,8 @@ namespace TowerDefense
         {
             if (_lastIndex == index) return;
             _lastIndex = index;
-            var tempTower = Towers[index];
+            
+            var tempTower = TowerPrefabGenerator.Towers[index];
             GridInputHandler.StartHover(tempTower.gameObject, tempTower.Model);
         }
 

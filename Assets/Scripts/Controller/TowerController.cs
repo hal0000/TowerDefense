@@ -10,7 +10,6 @@ namespace TowerDefense.Controller
     /// <summary>
     /// Wraps a TowerModel on your prefab and exposes its pre-decoded byte-grid footprint.
     /// </summary>
-    [RequireComponent(typeof(Renderer))]
     public class TowerController : MonoBehaviourExtra, ITower
     {
         public TowerModel Model;
