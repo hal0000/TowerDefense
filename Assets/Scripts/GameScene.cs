@@ -26,10 +26,9 @@ namespace TowerDefense
 #region Bindings
         public Bindable<string> GameStateText { get; private set; }
         public Bindable<int> GameStateIndex { get; } = new();
+        public Bindable<int> Speed { get; } = new();
         public ListBinding<TowerModel> TowerModels { get; private set; }
 #endregion
-
-
 
         [HideInInspector] public Enums.GameState GameState = Enums.GameState.Nothing;
         //public List<TowerController> Towers = new List<TowerController>();
@@ -37,19 +36,22 @@ namespace TowerDefense
         public RectTransform TowerButtonPrefab;
         public Transform TowerButtonPrefabContainer;
 
-
+        PlayerController _playerController = new();
         private List<EnemyModel> _enemyModels;
         private int _lastIndex = -1;
         public override void Awake()
         {
             base.Awake();
             GameManager.Instance.CurrentScene = this;
+            PlayerController pc = new();
+            pc.Initialize(new PlayerModel(50000, 1, 8));
             RegisterBindingContext();
         }
 
         public override void Start()
         {
             base.Start();
+
             SetBindingData();
             GetTowerList();
             SetTowerButtonUI();
@@ -68,6 +70,7 @@ namespace TowerDefense
                 case Enums.GameState.Playing:
                     break;
                 case Enums.GameState.Endgame:
+                    EventManager.PlayerDidSomething(Enums.PlayerActions.GameOver);
                     break;
             
             }
@@ -96,19 +99,6 @@ namespace TowerDefense
             List<TowerModel> models = GameManager.Instance.Api.GetBuildingTypes();
             TowerPrefabGenerator.GenerateTowerPrefabs(models);
             TowerModels.Value = models;
-            // ///PREFAB DATA IMPLEMENTATION
-            // var tempList = TowerPrefabGenerator.Towers;
-            // var counter = tempList.Count;
-            // foreach (var model in models)
-            // {
-            // int idx = model.Index;
-            // if (idx < 0 || idx >= counter)
-            // {
-            // LoggerExtra.LogWarning($"GameScene.GetTowerList(): no prefab assigned at index {idx}");
-            // continue;
-            // }
-            // tempList[idx].Initialize(model);
-            // }
         }
 
         public void SetTowerButtonUI()
@@ -175,21 +165,34 @@ namespace TowerDefense
             var tempTower = TowerPrefabGenerator.Towers[index];
             GridInputHandler.StartHover(tempTower.gameObject, tempTower.Model);
         }
-
+        private int _current = 1;
+        private const int _max = 8;
+        public void ChangeSpeed()
+        {
+            _current <<= 1;
+            if (_current > _max) _current = 1;
+            EventManager.TimeMultiplierEventNeeded(_current);
+            Speed.Value = _current;
+        }
+        
         public void TowerPlaced()
         {
             _lastIndex = -1;
         }
-        #region BindingContextInterface
-
+#region BindingContextInterface
         public void SetBindingData()
         {
             GameStateText = new Bindable<string>(GameState.ToString());
+            Speed.Value = TimeManager.TimeScale.ToInt();
             TowerModels = new ListBinding<TowerModel>();
-
         }
         public void RegisterBindingContext() => BindingContextRegistry.Register(GetType().Name, this);
         public void UnregisterBindingContext() => BindingContextRegistry.Unregister(GetType().Name, this);
 #endregion
+        public override void OnDestroy()
+        {
+            _playerController.OnSoftDestroy();
+            UnregisterBindingContext();
+        }
     }
 }
