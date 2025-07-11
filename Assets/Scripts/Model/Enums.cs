@@ -15,5 +15,11 @@ namespace TowerDefense.Model
             Hund,
             Katze
         }
+        public enum PlayerActions
+        {
+            GetDamage,
+            SpendGold,
+            GameOver
+        }
     }
 }

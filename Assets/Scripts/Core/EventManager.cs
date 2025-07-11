@@ -1,4 +1,5 @@
 using System;
+using TowerDefense.Model;
 
 namespace TowerDefense.Core
 {
@@ -45,5 +46,28 @@ namespace TowerDefense.Core
         {
             OnTimeChanged?.Invoke(value);
         }
+
+        #region PlayerActions
+
+        /// <summary>
+        /// Delegate for handling player events.
+        /// </summary>
+        public delegate void PlayerAction(Enums.PlayerActions type, int value);
+
+        /// <summary>
+        /// Event triggered when a player make an action
+        /// </summary>
+        public static event PlayerAction OnPlayerAction;
+        
+
+        /// <summary>
+        /// Notifies subscribers that a player did something
+        /// </summary>
+        public static void PlayerDidSomething(Enums.PlayerActions type, int value = 0)
+        {
+            OnPlayerAction?.Invoke(type,value);
+        }
+        #endregion
+
     }
 }
