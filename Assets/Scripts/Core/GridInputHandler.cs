@@ -223,7 +223,7 @@ namespace TowerDefense.Core
                 return;
             }
 
-            if (_scene.CanIBuyThatTower(_towerModel.Gold))
+            if (!_isEditing && _scene.CanIBuyThatTower(_isEditing ? 0 : _towerModel.Gold))
                 foreach (int p in _footprintCells)
                 {
                     CellController cv = _gridManager.GetCellView(p);
