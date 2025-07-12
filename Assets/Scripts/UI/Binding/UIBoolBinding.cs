@@ -90,7 +90,7 @@ namespace TowerDefense.UI.Binding
         /// <summary>
         /// List of active bindings for this UI component.
         /// </summary>
-        private readonly List<BindingInfo> _bindings = new(8);
+        private new readonly  List<BindingInfo> _bindings = new(8);
 
         private class ExpressionNode
         {

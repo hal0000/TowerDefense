@@ -19,7 +19,8 @@ namespace TowerDefense.Core
         /// </summary>
         private Vector3[] _currentPathPositions; 
         public IReadOnlyList<Vector3> CurrentPathPositions => _currentPathPositions;
-
+        public int Width => _gridWidth;
+        public int Height => _gridHeight;
         /// <summary>
         /// A simple random‐axis walk from (0,0) → (w-1,h-1).
         /// </summary>

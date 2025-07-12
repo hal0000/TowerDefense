@@ -5,6 +5,7 @@
 
 using TowerDefense.Network;
 using UnityEngine;
+using UnityEngine.InputSystem.EnhancedTouch;
 
 namespace TowerDefense.Core
 {
@@ -37,7 +38,8 @@ namespace TowerDefense.Core
                 Instance = this;
                 DontDestroyOnLoad(gameObject);
                 Api = new Api();
-
+                EnhancedTouchSupport.Enable();
+                TouchSimulation.Enable();
             }
         }
     }
