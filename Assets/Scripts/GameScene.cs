@@ -36,16 +36,16 @@ namespace TowerDefense
         public RectTransform TowerButtonPrefab;
         public Transform TowerButtonPrefabContainer;
 
-        PlayerController _playerController = new();
+        private readonly PlayerController _playerController = new();
         private List<EnemyModel> _enemyModels;
         private int _lastIndex = -1;
         public override void Awake()
         {
             base.Awake();
             GameManager.Instance.CurrentScene = this;
-            PlayerController pc = new();
-            pc.Initialize(new PlayerModel(50000, 1, 8));
+            _playerController.Initialize(new PlayerModel(50000, 0, 8));
             RegisterBindingContext();
+            EventManager.OnGameStateChanged += GameStateChanged;
         }
 
         public override void Start()
@@ -55,7 +55,7 @@ namespace TowerDefense
             SetBindingData();
             GetTowerList();
             SetTowerButtonUI();
-            GameStateChanged(Enums.GameState.Nothing);
+            EventManager.GameStateChanged(Enums.GameState.Nothing);
         }
 
         public void GameStateChanged(Enums.GameState newState)
@@ -68,8 +68,9 @@ namespace TowerDefense
                     _lastIndex = -1;
                     break;
                 case Enums.GameState.Playing:
+                    EventManager.PlayerDidSomething(Enums.PlayerActions.NewLevel);
                     break;
-                case Enums.GameState.Endgame:
+                case Enums.GameState.GameOver:
                     EventManager.PlayerDidSomething(Enums.PlayerActions.GameOver);
                     break;
             
@@ -81,14 +82,13 @@ namespace TowerDefense
         public void StartGame()
         {
             GridManager.BuildGrid(30, 30);
-            GameStateChanged(Enums.GameState.Preparing);
+            EventManager.GameStateChanged(Enums.GameState.Preparing);
             GetEnemyList();
         }
 
         public void InitiateRound()
         {
-            GameStateChanged(Enums.GameState.Playing);
-            StartCoroutine(SpawnWave(10, 5f));
+            EventManager.GameStateChanged(Enums.GameState.Playing);
         }
 
         /// <summary>
@@ -141,19 +141,6 @@ namespace TowerDefense
         }
 
         /// <summary>
-        /// Spawning Wave
-        /// </summary>
-        private IEnumerator SpawnWave(int totalEnemies, float perSecond)
-        {
-            float interval = 1f / perSecond;
-            for (int i = 0; i < totalEnemies; i++)
-            {
-                EnemyModel model = _enemyModels[0];
-                EnemyPool.GetEnemy(model.Type);
-                yield return new WaitForSeconds(interval);
-            }
-        }
-        /// <summary>
         /// Handles plane selection in the carousel with visual feedback.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -161,9 +148,14 @@ namespace TowerDefense
         {
             if (_lastIndex == index) return;
             _lastIndex = index;
-            
+            EventManager.GameStateChanged(Enums.GameState.Editing);
             var tempTower = TowerPrefabGenerator.Towers[index];
             GridInputHandler.StartHover(tempTower.gameObject, tempTower.Model);
+        }
+
+        public bool CanIBuyThatTower(int value)
+        {
+            return _playerController.Model.Gold.Value >= value;
         }
         private int _current = 1;
         private const int _max = 8;
@@ -175,10 +167,6 @@ namespace TowerDefense
             Speed.Value = _current;
         }
         
-        public void TowerPlaced()
-        {
-            _lastIndex = -1;
-        }
 #region BindingContextInterface
         public void SetBindingData()
         {
@@ -192,6 +180,7 @@ namespace TowerDefense
         public override void OnDestroy()
         {
             _playerController.OnSoftDestroy();
+            EventManager.OnGameStateChanged -= GameStateChanged;
             UnregisterBindingContext();
         }
     }

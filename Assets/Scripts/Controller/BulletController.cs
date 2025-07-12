@@ -8,24 +8,25 @@ namespace TowerDefense.Controller
     {
         private static GameScene _scene;
 
-        Transform _target;
+        IEnemy _target;
         Vector3 _startPos;
         float _duration = 0.2f;
         float _elapsed;
         bool _initialized;
+        int _damage;
         
         public void Awake()
         {
             if (_scene == null && GameManager.Instance.CurrentScene is GameScene gs) _scene = gs;
         }
 
-        public void Initialize(Transform start, Transform target, float duration = 0.2f)
+        public void Initialize(Transform start, IEnemy target,int damage, float duration = 0.2f)
         {
             _startPos = start.position;
             transform.position = _startPos;
             _target = target;
             _duration = duration;
-
+            _damage = damage;
         }
 
         protected override void Tick()
@@ -39,12 +40,13 @@ namespace TowerDefense.Controller
             float t = _elapsed / _duration;
             if (t >= 1f)
             {
-                transform.position = _target.position;
+                transform.position = _target.GetPosition();
+                _target.GetDamage(_damage);
                 ReturnBullet();
             }
             else
             {
-                transform.position = Vector3.Lerp(_startPos, _target.position, t);
+                transform.position = Vector3.Lerp(_startPos, _target.GetPosition(), t);
             }
         }
 

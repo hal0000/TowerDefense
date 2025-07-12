@@ -81,17 +81,22 @@ namespace TowerDefense.Controller
             t.position = pos;
             t.forward = dir;
         }
+        
 
-        public void ApplyDamage(int amount)
+        public void GetDamage(int value)
         {
-            Model.Health -= amount;
+            Model.Health -= value;
             if (Model.Health <= 0) Die();
+            
         }
-
-        public void GetDamage() { }
         public void ApplyDamage()
         {
             
+        }
+
+        public Vector3 GetPosition()
+        {
+            return transform.position;
         }
 
         public void Win()
@@ -102,6 +107,7 @@ namespace TowerDefense.Controller
 
         public void Die()
         {
+            EventManager.PlayerDidSomething(Enums.PlayerActions.EnemyKilled,Model.Gold);
             _scene.EnemyPool.ReturnEnemy(Model.Type, this);
         }
     }
