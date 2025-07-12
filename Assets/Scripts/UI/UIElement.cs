@@ -15,114 +15,116 @@ using UnityEngine.UI;
 namespace TowerDefense.UI
 {
     /// <summary>
-    /// Base class for all UI elements with ultimate performance optimizations.
+    ///     Base class for all UI elements with ultimate performance optimizations.
     /// </summary>
     [RequireComponent(typeof(RectTransform))]
     public class UIElement : MonoBehaviour
     {
-        /// <summary>
-        /// Duration of animations in seconds.
-        /// </summary>
-        [Header("Animation Settings")] 
-        public float AnimDuration = 0.2f;
+        // STATIC CACHE - ULTRA OPTIMIZED
+        private static readonly Dictionary<Type, IAnimatable[]> _typeCache = new(32, new TypeComparer());
+        private static readonly Dictionary<Type, int> _typeCountCache = new(32, new TypeComparer());
+        private static readonly ObjectPool<List<IAnimatable>> _listPool = new(32, 32);
 
         /// <summary>
-        /// Default scale of the UI element when fully shown.
+        ///     Duration of animations in seconds.
+        /// </summary>
+        [Header("Animation Settings")] public float AnimDuration = 0.2f;
+
+        /// <summary>
+        ///     Default scale of the UI element when fully shown.
         /// </summary>
         public Vector3 DefaultScale = Vector3.one;
 
         /// <summary>
-        /// Pivot point used during scale animations.
+        ///     Pivot point used during scale animations.
         /// </summary>
         public Vector2 AnimationPivot = new(0.5f, 0.5f);
 
         /// <summary>
-        /// Whether to animate the scale of the element when showing/hiding.
+        ///     Whether to animate the scale of the element when showing/hiding.
         /// </summary>
-        [Tooltip("Enable scale animation?")] 
-        public bool AnimScale;
+        [Tooltip("Enable scale animation?")] public bool AnimScale;
 
         /// <summary>
-        /// Whether to animate the position of the element when showing/hiding.
+        ///     Whether to animate the position of the element when showing/hiding.
         /// </summary>
         [Tooltip("Enable position animation?")]
         public bool AnimPosition;
 
         /// <summary>
-        /// Whether to animate the alpha (fade) of the element when showing/hiding.
+        ///     Whether to animate the alpha (fade) of the element when showing/hiding.
         /// </summary>
         [Tooltip("Enable alpha (fade) animation?")]
         public bool AnimAlpha = true;
+
         /// <summary>
-        /// Whether to animate the alpha (fade) of the element when showing/hiding.
+        ///     Whether to animate the alpha (fade) of the element when showing/hiding.
         /// </summary>
         [Tooltip("Skips traverse Child Search if child is disabled")]
-        public bool OptimizedAlpha = false;
+        public bool OptimizedAlpha;
+
         /// <summary>
-        /// Target local position for position animation.
-        /// When showing: animates from TargetPosition to default position.
-        /// When hiding: animates from default position to TargetPosition.
+        ///     Target local position for position animation.
+        ///     When showing: animates from TargetPosition to default position.
+        ///     When hiding: animates from default position to TargetPosition.
         /// </summary>
         [Tooltip("Target local position for position animation (Show: animate from TargetPosition to default position, Hide: reverse).")]
         public Vector3 TargetPosition;
 
         /// <summary>
-        /// Event invoked when the UI element is shown.
+        ///     Event invoked when the UI element is shown.
         /// </summary>
         public UnityEvent OnShow;
 
         /// <summary>
-        /// Event invoked when the UI element is hidden.
+        ///     Event invoked when the UI element is hidden.
         /// </summary>
         public UnityEvent OnHide;
 
         /// <summary>
-        /// List of all Graphic components in this UI element and its children.
-        /// </summary>
-        private readonly List<Graphic> _graphics = new();
-
-        /// <summary>
-        /// List of all TextMeshProUGUI components in this UI element and its children.
-        /// </summary>
-        private readonly List<TextMeshProUGUI> _textMeshPros = new();
-
-        /// <summary>
-        /// Default pivot point of the RectTransform, cached for animation purposes.
-        /// </summary>
-        private Vector2 _defaultPivot;
-
-        /// <summary>
-        /// Default local position of the element, cached for animation purposes.
-        /// </summary>
-        protected Vector3 _defaultPosition;
-
-        /// <summary>
-        /// Cached reference to the RectTransform component.
-        /// </summary>
-        private RectTransform _rectTransform;
-
-        /// <summary>
-        /// Whether the UI element is currently visible.
+        ///     Whether the UI element is currently visible.
         /// </summary>
         public bool IsVisible;
 
         /// <summary>
-        /// Whether animations should be allowed to run.
+        ///     List of all Graphic components in this UI element and its children.
+        /// </summary>
+        private readonly List<Graphic> _graphics = new();
+
+        /// <summary>
+        ///     List of all TextMeshProUGUI components in this UI element and its children.
+        /// </summary>
+        private readonly List<TextMeshProUGUI> _textMeshPros = new();
+
+        private int _animatableCount;
+
+        private IAnimatable[] _animatables;
+
+        /// <summary>
+        ///     Default pivot point of the RectTransform, cached for animation purposes.
+        /// </summary>
+        private Vector2 _defaultPivot;
+
+        /// <summary>
+        ///     Default local position of the element, cached for animation purposes.
+        /// </summary>
+        protected Vector3 _defaultPosition;
+
+        private bool _isInitialized;
+
+        /// <summary>
+        ///     Cached reference to the RectTransform component.
+        /// </summary>
+        private RectTransform _rectTransform;
+
+        /// <summary>
+        ///     Whether animations should be allowed to run.
         /// </summary>
         protected bool CanAnimate => IsVisible && gameObject.activeInHierarchy;
 
-        // STATIC CACHE - ULTRA OPTIMIZED
-        private static readonly Dictionary<Type, IAnimatable[]> _typeCache = new(32, new TypeComparer());
-        private static readonly Dictionary<Type, int> _typeCountCache = new(32, new TypeComparer());
-        private static readonly ObjectPool<List<IAnimatable>> _listPool = new(32, 32);
-        
-        private IAnimatable[] _animatables;
-        private int _animatableCount;
-        private bool _isInitialized;
-        
 
         /// <summary>
-        /// Initializes the UI element by caching components and setting up default values.
+        ///     Initializes the UI element by caching components and setting up default values.
         /// </summary>
         public virtual void Awake()
         {
@@ -135,14 +137,21 @@ namespace TowerDefense.UI
             Initialize();
         }
 
+        // ULTRA OPTIMIZED CLEANUP
+        public virtual void OnDestroy()
+        {
+            _animatables = null;
+            _isInitialized = false;
+        }
+
         private void Initialize()
         {
             if (_isInitialized) return;
-            
-            var type = GetType();
-            
+
+            Type type = GetType();
+
             // 1. Check type cache first (FASTEST PATH)
-            if (_typeCache.TryGetValue(type, out var cached))
+            if (_typeCache.TryGetValue(type, out IAnimatable[] cached))
             {
                 _animatables = cached;
                 _animatableCount = _typeCountCache[type];
@@ -151,18 +160,18 @@ namespace TowerDefense.UI
             }
 
             // 2. Create new cache (SLOW PATH - but only once per type)
-            var list = _listPool.Get();
+            List<IAnimatable> list = _listPool.Get();
             try
             {
-                GetComponentsInChildren<IAnimatable>(false, list);
-                
+                GetComponentsInChildren(false, list);
+
                 // Pre-allocate array with exact size
                 _animatables = new IAnimatable[list.Count];
                 _animatableCount = list.Count;
-                
+
                 // Fast array copy
                 Array.Copy(list.ToArray(), _animatables, _animatableCount);
-                
+
                 // Cache for future use
                 _typeCache[type] = _animatables;
                 _typeCountCache[type] = _animatableCount;
@@ -176,8 +185,8 @@ namespace TowerDefense.UI
         }
 
         /// <summary>
-        /// Recursively traverses the transform hierarchy and caches UI components for alpha animation.
-        /// Skips any child with its own UIElement component to prevent duplicate animations.
+        ///     Recursively traverses the transform hierarchy and caches UI components for alpha animation.
+        ///     Skips any child with its own UIElement component to prevent duplicate animations.
         /// </summary>
         /// <param name="parent">The transform to start traversing from.</param>
         private void TraverseAndCache(Transform parent)
@@ -204,13 +213,13 @@ namespace TowerDefense.UI
         }
 
         /// <summary>
-        /// Shows the UI element with the enabled animations and invokes the OnShow event.
+        ///     Shows the UI element with the enabled animations and invokes the OnShow event.
         /// </summary>
         public virtual void Show()
         {
             if (!_isInitialized) Initialize();
             if (!gameObject.activeInHierarchy || IsVisible) return;
-            
+
             IsVisible = true;
 
             // ULTRA OPTIMIZED LOOP - No bounds checking, no null checks
@@ -224,13 +233,13 @@ namespace TowerDefense.UI
         }
 
         /// <summary>
-        /// Hides the UI element with the enabled animations and invokes the OnHide event.
+        ///     Hides the UI element with the enabled animations and invokes the OnHide event.
         /// </summary>
         public virtual void Hide()
         {
             if (!_isInitialized) Initialize();
             if (!gameObject.activeInHierarchy || !IsVisible) return;
-            
+
             IsVisible = false;
 
             // ULTRA OPTIMIZED LOOP - No bounds checking, no null checks
@@ -244,7 +253,7 @@ namespace TowerDefense.UI
         }
 
         /// <summary>
-        /// Performs the show animations for scale, position, and alpha using PrimeTween.
+        ///     Performs the show animations for scale, position, and alpha using PrimeTween.
         /// </summary>
         public virtual void ShowAnimations()
         {
@@ -271,7 +280,7 @@ namespace TowerDefense.UI
         }
 
         /// <summary>
-        /// Performs the hide animations for scale, position, and alpha using PrimeTween.
+        ///     Performs the hide animations for scale, position, and alpha using PrimeTween.
         /// </summary>
         public virtual void HideAnimations()
         {
@@ -297,56 +306,53 @@ namespace TowerDefense.UI
         }
 
         /// <summary>
-        /// Performs a simple alpha loop animation between 0.2 and 1.0.
+        ///     Performs a simple alpha loop animation between 0.2 and 1.0.
         /// </summary>
         /// <param name="duration">Duration of each fade in/out cycle</param>
         /// <param name="graphic">The graphic component to animate</param>
         protected void StartAlphaLoop(float duration, Graphic graphic)
         {
             if (!CanAnimate) return;
-            
+
             Tween.Alpha(graphic, 0.2f, 1f, duration, Ease.Linear, -1, CycleMode.Yoyo);
         }
 
         /// <summary>
-        /// Performs a simple alpha loop animation between 0.2 and 1.0 for all graphics.
+        ///     Performs a simple alpha loop animation between 0.2 and 1.0 for all graphics.
         /// </summary>
         /// <param name="duration">Duration of each fade in/out cycle</param>
         protected void StartAlphaLoopForAll(float duration)
         {
             if (!CanAnimate) return;
 
-            foreach (var graphic in _graphics)
-            {
-                Tween.Alpha(graphic, 0.2f, 1f, duration, Ease.Linear, -1, CycleMode.Yoyo);
-            }
-        }
-
-        // ULTRA OPTIMIZED CLEANUP
-        public virtual void OnDestroy()
-        {
-            _animatables = null;
-            _isInitialized = false;
+            foreach (Graphic graphic in _graphics) Tween.Alpha(graphic, 0.2f, 1f, duration, Ease.Linear, -1, CycleMode.Yoyo);
         }
     }
 
     // ULTRA OPTIMIZED CUSTOM COMPARER
     public class TypeComparer : IEqualityComparer<Type>
     {
-        public bool Equals(Type x, Type y) => x == y;
-        public int GetHashCode(Type obj) => obj.GetHashCode();
+        public bool Equals(Type x, Type y)
+        {
+            return x == y;
+        }
+
+        public int GetHashCode(Type obj)
+        {
+            return obj.GetHashCode();
+        }
     }
 
     public class ObjectPool<T> where T : new()
     {
-        private readonly Stack<T> _pool;
         private readonly int _maxSize;
+        private readonly Stack<T> _pool;
 
         public ObjectPool(int initialSize, int maxSize)
         {
             _pool = new Stack<T>(initialSize);
             _maxSize = maxSize;
-            
+
             for (int i = 0; i < initialSize; i++)
             {
                 _pool.Push(new T());
@@ -360,10 +366,7 @@ namespace TowerDefense.UI
 
         public void Return(T item)
         {
-            if (_pool.Count < _maxSize)
-            {
-                _pool.Push(item);
-            }
+            if (_pool.Count < _maxSize) _pool.Push(item);
         }
     }
 }

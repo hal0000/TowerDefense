@@ -1,5 +1,4 @@
 using System;
-using TowerDefense.Pooling;
 
 namespace TowerDefense.Model
 {

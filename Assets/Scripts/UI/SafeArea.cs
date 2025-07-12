@@ -5,8 +5,8 @@ using UnityEngine;
 namespace TowerDefense.UI
 {
     /// <summary>
-    /// Applies safe area adjustments for notched devices.
-    /// Attach this component to the top-level UI panel (or its immediate child if a full-screen background is used).
+    ///     Applies safe area adjustments for notched devices.
+    ///     Attach this component to the top-level UI panel (or its immediate child if a full-screen background is used).
     /// </summary>
     public sealed class SafeArea : MonoBehaviour
     {

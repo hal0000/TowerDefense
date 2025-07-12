@@ -7,20 +7,26 @@ namespace TowerDefense.Controller
     public class BulletController : MonoBehaviourExtra, IPoolable
     {
         private static GameScene _scene;
+        private int _damage;
+        private float _duration = 0.2f;
+        private float _elapsed;
+        private bool _initialized;
+        private Vector3 _startPos;
 
-        IEnemy _target;
-        Vector3 _startPos;
-        float _duration = 0.2f;
-        float _elapsed;
-        bool _initialized;
-        int _damage;
-        
+        private IEnemy _target;
+
         public void Awake()
         {
             if (_scene == null && GameManager.Instance.CurrentScene is GameScene gs) _scene = gs;
         }
 
-        public void Initialize(Transform start, IEnemy target,int damage, float duration = 0.2f)
+        public void OnSpawn()
+        {
+            _elapsed = 0f;
+            _initialized = true;
+        }
+
+        public void Initialize(Transform start, IEnemy target, int damage, float duration = 0.2f)
         {
             _startPos = start.position;
             transform.position = _startPos;
@@ -31,10 +37,7 @@ namespace TowerDefense.Controller
 
         protected override void Tick()
         {
-            if (!_initialized || _target == null)
-            {
-                return;
-            }
+            if (!_initialized || _target == null) return;
 
             _elapsed += TimeManager.DeltaTime;
             float t = _elapsed / _duration;
@@ -50,17 +53,11 @@ namespace TowerDefense.Controller
             }
         }
 
-        void ReturnBullet()
+        private void ReturnBullet()
         {
             _initialized = false;
             _target = null;
             _scene.BulletPool.ReturnBullet(this);
-        }
-
-        public void OnSpawn()
-        {
-            _elapsed = 0f;
-            _initialized = true;
         }
     }
 }

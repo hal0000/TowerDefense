@@ -1,19 +1,17 @@
-using System;
 using TowerDefense.Core;
 using TowerDefense.Interface;
 using TowerDefense.Model;
 using TowerDefense.UI.Binding;
-using UnityEngine;
 
 namespace TowerDefense.Controller
 {
     public class PlayerController : IBindingContext
     {
+        public PlayerModel Model;
         public Bindable<int> Gold { get; private set; }
         public Bindable<int> Level { get; private set; }
         public Bindable<int> Health { get; private set; }
-        public PlayerModel Model;
-        
+
         public void Initialize(PlayerModel model)
         {
             Model = model;
@@ -28,10 +26,7 @@ namespace TowerDefense.Controller
             {
                 case Enums.PlayerActions.GetDamage:
                     Model.Health.Value -= 1;
-                    if (Model.Health.Value <= 0)
-                    {
-                        EventManager.GameStateChanged(Enums.GameState.GameOver);
-                    }
+                    if (Model.Health.Value <= 0) EventManager.GameStateChanged(Enums.GameState.GameOver);
                     break;
                 case Enums.PlayerActions.EnemyKilled:
                     Model.Gold.Value += value;
@@ -49,7 +44,15 @@ namespace TowerDefense.Controller
                     break;
             }
         }
-#region BindingContextInterface
+
+        public void OnSoftDestroy()
+        {
+            EventManager.OnPlayerAction -= PlayerAction;
+            UnregisterBindingContext();
+        }
+
+        #region BindingContextInterface
+
         public void SetBindingData()
         {
             // Gold = new Bindable<int>(_model.GoldData);
@@ -60,13 +63,17 @@ namespace TowerDefense.Controller
             Health = Model.Health;
             Level = Model.Level;
         }
-        public void RegisterBindingContext() => BindingContextRegistry.Register(GetType().Name, this);
-        public void UnregisterBindingContext() => BindingContextRegistry.Unregister(GetType().Name, this);
-        #endregion
-        public void OnSoftDestroy()
+
+        public void RegisterBindingContext()
         {
-            EventManager.OnPlayerAction -= PlayerAction;
-            UnregisterBindingContext();
+            BindingContextRegistry.Register(GetType().Name, this);
         }
+
+        public void UnregisterBindingContext()
+        {
+            BindingContextRegistry.Unregister(GetType().Name, this);
+        }
+
+        #endregion
     }
 }

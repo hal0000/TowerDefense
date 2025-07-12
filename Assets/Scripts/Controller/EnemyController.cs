@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using TowerDefense.Core;
 using TowerDefense.Interface;
@@ -10,13 +9,46 @@ namespace TowerDefense.Controller
     public class EnemyController : MonoBehaviourExtra, IEnemy, IPoolable
     {
         private static GameScene _scene;
-        public EnemyModel Model { get; private set; }
-        private IReadOnlyList<Vector3> _waypoints;
-        private int _waypointIndex;
         private bool _flaggedForRecycle;
+        private int _waypointIndex;
+        private IReadOnlyList<Vector3> _waypoints;
+        public EnemyModel Model { get; private set; }
+
         public void Awake()
         {
             if (_scene == null && GameManager.Instance.CurrentScene is GameScene gs) _scene = gs;
+        }
+
+
+        public void GetDamage(int value)
+        {
+            Model.Health -= value;
+            if (Model.Health > 0) return;
+            Die();
+            _flaggedForRecycle = true;
+        }
+
+        public void ApplyDamage()
+        {
+        }
+
+        public Vector3 GetPosition()
+        {
+            return transform.position;
+        }
+
+        public void Win()
+        {
+            if (_flaggedForRecycle) return;
+            EventManager.PlayerDidSomething(Enums.PlayerActions.GetDamage, Model.Damage);
+            _scene.EnemyPool.ReturnEnemy(Model.Type, this);
+        }
+
+        public void Die()
+        {
+            if (_flaggedForRecycle) return;
+            EventManager.PlayerDidSomething(Enums.PlayerActions.EnemyKilled, Model.Gold);
+            _scene.EnemyPool.ReturnEnemy(Model.Type, this);
         }
 
         public void OnSpawn()
@@ -34,21 +66,18 @@ namespace TowerDefense.Controller
 
         protected override void Tick()
         {
-            // 1) have we reached the end?
-            var wp = _waypoints;
+            IReadOnlyList<Vector3> wp = _waypoints;
             int count = wp.Count;
             if (_waypointIndex >= count)
             {
                 Win();
+                _flaggedForRecycle = true;
                 return;
             }
-
-            // 2) cache transform + positions
             Transform t = transform;
             Vector3 pos = t.position;
             Vector3 target = wp[_waypointIndex];
 
-            // 3) delta + distance²
             Vector3 delta = target - pos;
             float sqrMag = delta.sqrMagnitude;
             if (sqrMag < 0.0001f)
@@ -56,17 +85,10 @@ namespace TowerDefense.Controller
                 _waypointIndex++;
                 return;
             }
-
-            // 4) build direction via fast inv-sqrt
             float invMag = TypeExtensions.InvSqrt(sqrMag);
             Vector3 dir = delta * invMag;
-
-            // 5) compute how far we want to step this frame
             float step = Model.Speed * TimeManager.DeltaTime;
             float stepSqr = step * step;
-
-            // 6) clamp to not overshoot:
-            // if step would carry us beyond the waypoint, snap to it
             if (stepSqr >= sqrMag)
             {
                 pos = target;
@@ -76,39 +98,8 @@ namespace TowerDefense.Controller
             {
                 pos += dir * step;
             }
-
-            // 7) apply move + face direction
             t.position = pos;
             t.forward = dir;
-        }
-        
-
-        public void GetDamage(int value)
-        {
-            Model.Health -= value;
-            if (Model.Health <= 0) Die();
-            
-        }
-        public void ApplyDamage()
-        {
-            
-        }
-
-        public Vector3 GetPosition()
-        {
-            return transform.position;
-        }
-
-        public void Win()
-        {
-            EventManager.PlayerDidSomething(Enums.PlayerActions.GetDamage,Model.Damage);
-            _scene.EnemyPool.ReturnEnemy(Model.Type, this);
-        }
-
-        public void Die()
-        {
-            EventManager.PlayerDidSomething(Enums.PlayerActions.EnemyKilled,Model.Gold);
-            _scene.EnemyPool.ReturnEnemy(Model.Type, this);
         }
     }
 }

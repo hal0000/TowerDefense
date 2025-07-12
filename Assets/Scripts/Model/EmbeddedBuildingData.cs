@@ -1,11 +1,11 @@
 namespace TowerDefense.Model
 {
-    /// <summary>
-    /// embedded data for mockup api call simulation
-    /// </summary>
-    public static class EmbeddedBuildingData
+  /// <summary>
+  ///     embedded data for mockup api call simulation
+  /// </summary>
+  public static class EmbeddedBuildingData
     {
-      public const string TowerJson = @"
+        public const string TowerJson = @"
       {
         ""Templates"": [
           {
@@ -52,7 +52,7 @@ namespace TowerDefense.Model
             ""Index"": 4,
             ""Name"": ""WerkStudent"",
             ""Gold"": 1000,
-            ""Footprint"": [ ""11"", ""1"", ""11"" ],
+            ""Footprint"": [ ""11"", ""10"", ""11"" ],
             ""Range"": 2,
             ""Damage"": 15,
             ""Level"": 1,
@@ -80,6 +80,7 @@ namespace TowerDefense.Model
           }
         ]
       }";
+
         public const string EnemyJson = @"
         {
           ""Enemies"": [

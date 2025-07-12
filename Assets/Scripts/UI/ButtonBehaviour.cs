@@ -37,16 +37,13 @@ namespace TowerDefense.UI
             if (ButtonDisabled)
                 Disabled?.Invoke(null);
         }
-        
+
         public void OnPointerClick(PointerEventData data)
         {
             if (ButtonDisabled) return;
-            if (data.button == PointerEventData.InputButton.Left)
-            {
-                ClickAction.Invoke();
-            }
+            if (data.button == PointerEventData.InputButton.Left) ClickAction.Invoke();
         }
-        
+
         public void OnPointerDown(PointerEventData eventData)
         {
             if (ButtonDisabled) return;
@@ -64,7 +61,7 @@ namespace TowerDefense.UI
             Vector3 trLocalScale = tr.localScale;
             _scaleTween = Tween.Scale(tr, trLocalScale, _originalScale * _scaleDownSize, _animationDuration, Ease.InSine);
         }
-        
+
         public void OnPointerExit(PointerEventData eventData)
         {
             if (ButtonDisabled) return;
@@ -74,7 +71,7 @@ namespace TowerDefense.UI
             Transform tr = transform;
             _scaleTween = Tween.Scale(tr, tr.localScale, _originalScale, _animationDuration, Ease.OutSine);
         }
-        
+
         public void OnPointerUp(PointerEventData eventData)
         {
             if (ButtonDisabled) return;
@@ -97,7 +94,7 @@ namespace TowerDefense.UI
             ButtonDisabled = false;
             Enabled?.Invoke(null);
         }
-        
+
         private IEnumerator HoldRoutine()
         {
             while (true)
@@ -106,7 +103,7 @@ namespace TowerDefense.UI
                 yield return new WaitForSeconds(HoldInvokeInterval);
             }
         }
-        
+
         private void StopHold()
         {
             if (_holdCoroutine == null) return;

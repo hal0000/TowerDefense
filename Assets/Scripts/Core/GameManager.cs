@@ -10,22 +10,23 @@ using UnityEngine.InputSystem.EnhancedTouch;
 namespace TowerDefense.Core
 {
     /// <summary>
-    /// Central manager class that handles core game systems, scene management, and resource loading.
-    /// Implements the Singleton pattern for global access to game systems.
+    ///     Central manager class that handles core game systems, scene management, and resource loading.
+    ///     Implements the Singleton pattern for global access to game systems.
     /// </summary>
     public class GameManager : MonoBehaviour
     {
+        public BaseScene CurrentScene;
 
         /// <summary>
-        /// Singleton instance of the GameManager for global access.
-        /// </summary>
-        public static GameManager Instance { get; private set; }
-        /// <summary>
-        /// Mock Api class
+        ///     Mock Api class
         /// </summary>
         public Api Api;
-        
-        public BaseScene CurrentScene;
+
+        /// <summary>
+        ///     Singleton instance of the GameManager for global access.
+        /// </summary>
+        public static GameManager Instance { get; private set; }
+
         private void Awake()
         {
             Application.targetFrameRate = 120;

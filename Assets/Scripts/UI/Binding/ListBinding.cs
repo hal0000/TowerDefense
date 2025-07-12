@@ -10,37 +10,38 @@ using System.Runtime.CompilerServices;
 namespace TowerDefense.UI.Binding
 {
     /// <summary>
-    /// Holds a collection and provides static context for binding expressions.
+    ///     Holds a collection and provides static context for binding expressions.
     /// </summary>
     public class ListBinding<T> : Bindable<IList<T>>
     {
-        // Instance context variables
-        private int _index = -1;
-        private T _iterator = default;
-        private int _count = 0;
-        
         // Cache for type info
         private static readonly Type _listType = typeof(ListBinding<T>);
         private static readonly Type _itemType = typeof(T);
-        
+
+        private int _count;
+
+        // Instance context variables
+        private int _index = -1;
+        private T _iterator;
+
         // Constructor
-        public ListBinding() : base(new List<T>()) 
+        public ListBinding() : base(new List<T>())
         {
             _count = Value?.Count ?? 0;
         }
-        
+
         // Constructor with initial items
-        public ListBinding(IList<T> initialItems) : base(initialItems ?? new List<T>()) 
+        public ListBinding(IList<T> initialItems) : base(initialItems ?? new List<T>())
         {
             _count = Value?.Count ?? 0;
         }
-        
+
         // Override Value to update Count
         public new IList<T> Value
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => base.Value;
-            
+
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             set
             {
@@ -49,9 +50,25 @@ namespace TowerDefense.UI.Binding
                 _count = value?.Count ?? 0;
             }
         }
-        
+
         /// <summary>
-        /// Sets the current context for binding expressions.
+        ///     Indexer to access items in the list with binding context
+        /// </summary>
+        public T this[int index]
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                if (Value == null || index < 0 || index >= Value.Count)
+                    return default;
+
+                SetContext(index, Value);
+                return Value[index];
+            }
+        }
+
+        /// <summary>
+        ///     Sets the current context for binding expressions.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void SetContext(int index, IList<T> items)
@@ -62,13 +79,13 @@ namespace TowerDefense.UI.Binding
                 _iterator = default;
                 return;
             }
-            
+
             _index = index;
             _iterator = items[index];
         }
-        
+
         /// <summary>
-        /// Adds an item to the collection and updates the binding.
+        ///     Adds an item to the collection and updates the binding.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Add(T item)
@@ -77,36 +94,17 @@ namespace TowerDefense.UI.Binding
             Value.Add(item);
             _count = Value.Count;
         }
-        
+
         /// <summary>
-        /// Removes an item from the collection and updates the binding.
+        ///     Removes an item from the collection and updates the binding.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Remove(T item)
         {
             if (Value == null) return false;
             bool result = Value.Remove(item);
-            if (result)
-            {
-                _count = Value.Count;
-            }
+            if (result) _count = Value.Count;
             return result;
         }
-        
-        /// <summary>
-        /// Indexer to access items in the list with binding context
-        /// </summary>
-        public T this[int index]
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-                if (Value == null || index < 0 || index >= Value.Count)
-                    return default;
-                    
-                SetContext(index, Value);
-                return Value[index];
-            }
-        }
     }
-} 
+}

@@ -9,64 +9,34 @@ namespace TowerDefense.Model
     [Serializable]
     public class TowerModel : BaseModel, ISerializationCallbackReceiver
     {
-#region JSONKEYS
-        public int Index;
-        public string Name;
-        public int Gold;
-        public string[] Footprint;
-        public int Range;
-        public int Damage;
-        public int Level;
-        public int FireRate;
-#endregion
-
-#region RUNTIME
-
-        [NonSerialized] private int _rows;
-        [NonSerialized] private int _cols;
-        [NonSerialized] private byte[] _grid; // flat (row*cols + col)
-        [NonSerialized] private int _packedPosition;
-#endregion
-
-public Bindable<string> NameBinder { get; } = new();
-public Bindable<int> GoldBinder { get; } = new();
+        public Bindable<string> NameBinder { get; } = new();
+        public Bindable<int> GoldBinder { get; } = new();
 
 
         /// <summary>
-        /// Number of rows in the footprint.
+        ///     Number of rows in the footprint.
         /// </summary>
         public int Rows => _rows;
 
         /// <summary>
-        /// Number of cols in the footprint.
+        ///     Number of cols in the footprint.
         /// </summary>
         public int Cols => _cols;
 
         /// <summary>
-        /// Get cell value (0 or 1) at (r,c).
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public byte GetCell(int r, int c) => _grid[r * _cols + c];
-
-        /// <summary>
-        /// Tower’s current grid position, packed.
+        ///     Tower’s current grid position, packed.
         /// </summary>
         public int PackedPosition => _packedPosition;
 
         /// <summary>
-        /// Unpacked X
+        ///     Unpacked X
         /// </summary>
         public int X => CoordPacker.UnpackX(_packedPosition);
 
         /// <summary>
-        /// Unpacked Y
+        ///     Unpacked Y
         /// </summary>
         public int Y => CoordPacker.UnpackY(_packedPosition);
-
-        /// <summary>
-        /// Set tower’s position on the grid.
-        /// </summary>
-        public void SetPosition(int packed) => _packedPosition = packed;
 
         public void OnAfterDeserialize()
         {
@@ -86,7 +56,49 @@ public Bindable<int> GoldBinder { get; } = new();
                 }
             }
         }
-        public void OnBeforeSerialize() {}
+
+        public void OnBeforeSerialize()
+        {
+        }
+
+        /// <summary>
+        ///     Get cell value (0 or 1) at (r,c).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public byte GetCell(int r, int c)
+        {
+            return _grid[r * _cols + c];
+        }
+
+        /// <summary>
+        ///     Set tower’s position on the grid.
+        /// </summary>
+        public void SetPosition(int packed)
+        {
+            _packedPosition = packed;
+        }
+
+        #region JSONKEYS
+
+        public int Index;
+        public string Name;
+        public int Gold;
+        public string[] Footprint;
+        public int Range;
+        public int Damage;
+        public int Level;
+        public int FireRate;
+
+        #endregion
+
+        #region RUNTIME
+
+        [NonSerialized] private int _rows;
+        [NonSerialized] private int _cols;
+        [NonSerialized] private byte[] _grid; // flat (row*cols + col)
+        [NonSerialized] private int _packedPosition;
+
+        #endregion
     }
 
     [Serializable]

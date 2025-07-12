@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using UnityEngine;
 using TowerDefense.Controller;
+using UnityEngine;
 
 namespace TowerDefense.Pooling
 {
@@ -11,12 +11,12 @@ namespace TowerDefense.Pooling
 
         private Queue<BulletController> _pool;
 
-        void Awake()
+        private void Awake()
         {
             _pool = new Queue<BulletController>(_poolSize);
             for (int i = 0; i < _poolSize; i++)
             {
-                var b = Instantiate(_prefab, transform);
+                BulletController b = Instantiate(_prefab, transform);
                 b.gameObject.SetActive(false);
                 _pool.Enqueue(b);
             }

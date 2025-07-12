@@ -1,6 +1,6 @@
 namespace TowerDefense.Interface
 {
-    public interface IPoolable 
+    public interface IPoolable
     {
         void OnSpawn();
     }

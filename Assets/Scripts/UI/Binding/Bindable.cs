@@ -11,35 +11,37 @@ using UnityEngine;
 namespace TowerDefense.UI.Binding
 {
     /// <summary>
-    /// A generic reactive property wrapper that provides change notification and value binding capabilities.
-    /// Supports serialization for Unity inspector integration.
+    ///     A generic reactive property wrapper that provides change notification and value binding capabilities.
+    ///     Supports serialization for Unity inspector integration.
     /// </summary>
     /// <typeparam name="T">The type of value to bind</typeparam>
     [Serializable]
     public class Bindable<T>
     {
         /// <summary>
-        /// The underlying value that is being bound.
-        /// </summary>
-        [SerializeField] private T _value;
-
-        /// <summary>
-        /// The event handler for value changes.
-        /// </summary>
-        private Action<T> _onValueChanged;
-
-        /// <summary>
-        /// The equality comparer for the value type.
+        ///     The equality comparer for the value type.
         /// </summary>
         private static readonly EqualityComparer<T> _comparer = EqualityComparer<T>.Default;
 
         /// <summary>
-        /// Initializes a new instance of the Bindable class with the default value.
+        ///     The underlying value that is being bound.
         /// </summary>
-        public Bindable() { }
+        [SerializeField] private T _value;
 
         /// <summary>
-        /// Initializes a new instance of the Bindable class with the specified initial value.
+        ///     The event handler for value changes.
+        /// </summary>
+        private Action<T> _onValueChanged;
+
+        /// <summary>
+        ///     Initializes a new instance of the Bindable class with the default value.
+        /// </summary>
+        public Bindable()
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the Bindable class with the specified initial value.
         /// </summary>
         /// <param name="initialValue">The initial value to set</param>
         public Bindable(T initialValue)
@@ -48,8 +50,8 @@ namespace TowerDefense.UI.Binding
         }
 
         /// <summary>
-        /// Gets or sets the current value. Setting a new value will trigger the OnValueChanged event
-        /// if the value is different from the current value.
+        ///     Gets or sets the current value. Setting a new value will trigger the OnValueChanged event
+        ///     if the value is different from the current value.
         /// </summary>
         public T Value
         {
@@ -66,7 +68,7 @@ namespace TowerDefense.UI.Binding
         }
 
         /// <summary>
-        /// Event that is raised when the Value property changes.
+        ///     Event that is raised when the Value property changes.
         /// </summary>
         public event Action<T> OnValueChanged
         {
@@ -77,64 +79,79 @@ namespace TowerDefense.UI.Binding
         }
 
         /// <summary>
-        /// Implicitly converts a Bindable to its underlying value type.
+        ///     Implicitly converts a Bindable to its underlying value type.
         /// </summary>
         /// <param name="bindable">The Bindable instance to convert</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator T(Bindable<T> bindable) => bindable._value;
+        public static implicit operator T(Bindable<T> bindable)
+        {
+            return bindable._value;
+        }
     }
 
     /// <summary>
-    /// Specialized Bindable implementation for integer values to avoid boxing/unboxing overhead.
+    ///     Specialized Bindable implementation for integer values to avoid boxing/unboxing overhead.
     /// </summary>
     [Serializable]
     public class BindableInt : Bindable<int>
     {
         /// <summary>
-        /// Initializes a new instance of the BindableInt class with the default value (0).
+        ///     Initializes a new instance of the BindableInt class with the default value (0).
         /// </summary>
-        public BindableInt() : base() { }
+        public BindableInt()
+        {
+        }
 
         /// <summary>
-        /// Initializes a new instance of the BindableInt class with the specified initial value.
+        ///     Initializes a new instance of the BindableInt class with the specified initial value.
         /// </summary>
         /// <param name="initialValue">The initial integer value</param>
-        public BindableInt(int initialValue) : base(initialValue) { }
+        public BindableInt(int initialValue) : base(initialValue)
+        {
+        }
     }
 
     /// <summary>
-    /// Specialized Bindable implementation for float values to avoid boxing/unboxing overhead.
+    ///     Specialized Bindable implementation for float values to avoid boxing/unboxing overhead.
     /// </summary>
     [Serializable]
     public class BindableFloat : Bindable<float>
     {
         /// <summary>
-        /// Initializes a new instance of the BindableFloat class with the default value (0.0f).
+        ///     Initializes a new instance of the BindableFloat class with the default value (0.0f).
         /// </summary>
-        public BindableFloat() : base() { }
+        public BindableFloat()
+        {
+        }
 
         /// <summary>
-        /// Initializes a new instance of the BindableFloat class with the specified initial value.
+        ///     Initializes a new instance of the BindableFloat class with the specified initial value.
         /// </summary>
         /// <param name="initialValue">The initial float value</param>
-        public BindableFloat(float initialValue) : base(initialValue) { }
+        public BindableFloat(float initialValue) : base(initialValue)
+        {
+        }
     }
 
     /// <summary>
-    /// Specialized Bindable implementation for boolean values to avoid boxing/unboxing overhead.
+    ///     Specialized Bindable implementation for boolean values to avoid boxing/unboxing overhead.
     /// </summary>
     [Serializable]
     public class BindableBool : Bindable<bool>
     {
         /// <summary>
-        /// Initializes a new instance of the BindableBool class with the default value (false).
+        ///     Initializes a new instance of the BindableBool class with the default value (false).
         /// </summary>
-        public BindableBool() : base() { }
+        public BindableBool()
+        {
+        }
 
         /// <summary>
-        /// Initializes a new instance of the BindableBool class with the specified initial value.
+        ///     Initializes a new instance of the BindableBool class with the specified initial value.
         /// </summary>
         /// <param name="initialValue">The initial boolean value</param>
-        public BindableBool(bool initialValue) : base(initialValue) { }
+        public BindableBool(bool initialValue) : base(initialValue)
+        {
+        }
     }
 }

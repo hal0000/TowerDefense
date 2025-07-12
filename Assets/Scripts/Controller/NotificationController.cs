@@ -10,43 +10,43 @@ using UnityEngine.UI;
 namespace TowerDefense.Controller
 {
     /// <summary>
-    /// Manages the display of in-game notifications, handling different notification types,
-    /// animations, and automatic dismissal after a delay.
+    ///     Manages the display of in-game notifications, handling different notification types,
+    ///     animations, and automatic dismissal after a delay.
     /// </summary>
     public class NotificationController : UIElement
     {
         /// <summary>
-        /// The background rectangle that contains the notification text.
+        ///     The background rectangle that contains the notification text.
         /// </summary>
         [SerializeField] private RectTransform _backgroundRect;
 
         /// <summary>
-        /// The text component that displays the notification message.
+        ///     The text component that displays the notification message.
         /// </summary>
         [SerializeField] private TextMeshProUGUI _notificationText;
 
         /// <summary>
-        /// The horizontal padding to add around the notification text.
+        ///     The horizontal padding to add around the notification text.
         /// </summary>
         [SerializeField] private float _horizontalPadding = 20f;
 
         /// <summary>
-        /// The current type of notification being displayed.
+        ///     The current type of notification being displayed.
         /// </summary>
         public Enums.NotificationType Type;
 
         /// <summary>
-        /// Coroutine reference for managing the notification display duration.
+        ///     Coroutine reference for managing the notification display duration.
         /// </summary>
         private Coroutine _co;
 
         /// <summary>
-        /// The last notification type that was displayed, used to prevent duplicate notifications.
+        ///     The last notification type that was displayed, used to prevent duplicate notifications.
         /// </summary>
         private Enums.NotificationType _lastType;
 
         /// <summary>
-        /// Initializes the notification controller by subscribing to notification events.
+        ///     Initializes the notification controller by subscribing to notification events.
         /// </summary>
         public override void Awake()
         {
@@ -55,7 +55,7 @@ namespace TowerDefense.Controller
         }
 
         /// <summary>
-        /// Cleans up event subscriptions when the component is destroyed.
+        ///     Cleans up event subscriptions when the component is destroyed.
         /// </summary>
         public override void OnDestroy()
         {
@@ -64,7 +64,7 @@ namespace TowerDefense.Controller
         }
 
         /// <summary>
-        /// Sets the notification text based on the notification type and starts the display routine.
+        ///     Sets the notification text based on the notification type and starts the display routine.
         /// </summary>
         /// <param name="value">The type of notification to display</param>
         private void SetNotificationValue(Enums.NotificationType value)
@@ -89,7 +89,7 @@ namespace TowerDefense.Controller
         }
 
         /// <summary>
-        /// Shows the notification with animations.
+        ///     Shows the notification with animations.
         /// </summary>
         public override void Show()
         {
@@ -99,7 +99,7 @@ namespace TowerDefense.Controller
         }
 
         /// <summary>
-        /// Hides the notification with animations.
+        ///     Hides the notification with animations.
         /// </summary>
         public override void Hide()
         {
@@ -109,7 +109,7 @@ namespace TowerDefense.Controller
         }
 
         /// <summary>
-        /// Coroutine that manages the notification display duration and automatic dismissal.
+        ///     Coroutine that manages the notification display duration and automatic dismissal.
         /// </summary>
         private IEnumerator NotificationRoutine()
         {
@@ -120,7 +120,7 @@ namespace TowerDefense.Controller
         }
 
         /// <summary>
-        /// Updates the background width to match the notification text width plus padding.
+        ///     Updates the background width to match the notification text width plus padding.
         /// </summary>
         private void UpdateBackgroundWidth()
         {

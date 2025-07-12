@@ -15,28 +15,27 @@ using UnityEngine.Events;
 namespace TowerDefense.UI.Binding
 {
     /// <summary>
-    /// A UI binding component that parses boolean expressions and invokes UnityEvents based on the result.
-    /// Supports expressions like:
-    /// - Direct boolean properties: 'MenuScene.IsActive'
-    /// - Numeric comparisons: 'MenuScene.Gold > 10', 'MenuScene.Health <= 100'
-    /// - Property comparisons: 'MenuScene.Gold >= MenuScene.LevelThreshold'
-    /// - Equality checks: 'MenuScene.Score == MenuScene.HighScore'
-    /// - Inequality checks: 'MenuScene.CurrentHealth != MenuScene.MaxHealth'
-    /// - Logical AND: 'MenuScene.IsActive && MenuScene.HasGold'
-    /// - Logical OR: 'MenuScene.IsPaused || MenuScene.IsGameOver'
-    /// - Nested expressions: 'MenuScene.IsActive && (MenuScene.Gold > 10)'
-    /// - Complex conditions: '(MenuScene.Gold > MenuScene.Bet) && (MenuScene.Level > MenuScene.LevelThreshold)'
-    /// 
-    /// Supported operators:
-    /// - Comparison: >, <, >=, <=, ==, !=
-    /// - Logical: &&, ||
-    /// - Grouping: ( )
-    /// 
-    /// Format examples:
-    /// - Single boolean: [ContextName].[PropertyName]
-    /// - Comparison: [ContextName].[PropertyName] [operator] [ContextName].[PropertyName] or [number]
-    /// - Logical: [expression] [&& or ||] [expression]
-    /// - Nested: [expression] [&& or ||] ([expression] [operator] [expression])
+    ///     A UI binding component that parses boolean expressions and invokes UnityEvents based on the result.
+    ///     Supports expressions like:
+    ///     - Direct boolean properties: 'MenuScene.IsActive'
+    ///     - Numeric comparisons: 'MenuScene.Gold > 10', 'MenuScene.Health <= 100'
+    /// - Property comparisons: 'MenuScene.Gold >=
+    ///     MenuScene.LevelThreshold'
+    ///     - Equality checks: 'MenuScene.Score == MenuScene.HighScore'
+    ///     - Inequality checks: 'MenuScene.CurrentHealth != MenuScene.MaxHealth'
+    ///     - Logical AND: 'MenuScene.IsActive && MenuScene.HasGold'
+    ///     - Logical OR: 'MenuScene.IsPaused || MenuScene.IsGameOver'
+    ///     - Nested expressions: 'MenuScene.IsActive && (MenuScene.Gold > 10)'
+    ///     - Complex conditions: '(MenuScene.Gold > MenuScene.Bet) && (MenuScene.Level > MenuScene.LevelThreshold)'
+    ///     Supported operators:
+    ///     - Comparison: >, <, >=, <=, ==, !=
+    ///     - Logical: &&, ||
+    ///     - Grouping: ( )
+    ///     Format examples:
+    ///     - Single boolean: [ContextName].[PropertyName]
+    ///     - Comparison: [ContextName].[PropertyName] [operator] [ContextName].[PropertyName] or [number]
+    ///     - Logical: [expression] [&& or ||] [expression]
+    ///     - Nested: [expression] [&& or ||] ([expression] [operator] [expression])
     /// </summary>
     [RequireComponent(typeof(MonoBehaviour))]
     public class UIBoolBinding : UIBinding
@@ -45,10 +44,28 @@ namespace TowerDefense.UI.Binding
         private static readonly string[] LogicalOperators = { "&&", "||" };
 
         /// <summary>
-        /// The expression to evaluate. Examples:
-        /// - 'MenuScene.IsActive'
-        /// - 'MenuScene.Gold >= 10'
-        /// - 'MenuScene.Health <= MenuScene.MaxHealth'
+        ///     Cache of property information to avoid repeated reflection lookups.
+        /// </summary>
+        private static readonly Dictionary<(Type, string), PropertyInfo> _propCache = new(31);
+
+        /// <summary>
+        ///     Cache of event information to avoid repeated reflection lookups.
+        /// </summary>
+        private static readonly Dictionary<(Type, string), EventInfo> _eventCache = new(31);
+
+        /// <summary>
+        ///     Shared object array pool for efficient memory usage during binding updates.
+        /// </summary>
+        private static readonly ArrayPool<object> sPool = ArrayPool<object>.Shared;
+
+        // üst seviye karşılaştırma
+        private static readonly string[] ComparisonOps = { ">=", "<=", "==", "!=", ">", "<" };
+
+        /// <summary>
+        ///     The expression to evaluate. Examples:
+        ///     - 'MenuScene.IsActive'
+        ///     - 'MenuScene.Gold >= 10'
+        ///     - 'MenuScene.Health <= MenuScene.MaxHealth'
         /// - 'MenuScene.Score == MenuScene.HighScore'
         /// - 'MenuScene.IsActive && MenuScene.HasGold'
         /// - 'MenuScene.IsPaused || MenuScene.IsGameOver'
@@ -60,59 +77,28 @@ namespace TowerDefense.UI.Binding
                  "- 'MenuScene.Score == MenuScene.HighScore'\n" +
                  "- 'MenuScene.IsActive && MenuScene.HasGold'\n" +
                  "- 'MenuScene.IsPaused || MenuScene.IsGameOver'")]
-        [SerializeField] private string _expression;
+        [SerializeField]
+        private string _expression;
 
         /// <summary>
-        /// Event invoked when the expression evaluates to true.
+        ///     Event invoked when the expression evaluates to true.
         /// </summary>
         [SerializeField] private UnityEvent _onTrue = new();
 
         /// <summary>
-        /// Event invoked when the expression evaluates to false.
+        ///     Event invoked when the expression evaluates to false.
         /// </summary>
         [SerializeField] private UnityEvent _onFalse = new();
 
         /// <summary>
-        /// Cache of property information to avoid repeated reflection lookups.
+        ///     List of active bindings for this UI component.
         /// </summary>
-        private static readonly Dictionary<(Type, string), PropertyInfo> _propCache = new(31);
-
-        /// <summary>
-        /// Cache of event information to avoid repeated reflection lookups.
-        /// </summary>
-        private static readonly Dictionary<(Type, string), EventInfo> _eventCache = new(31);
-
-        /// <summary>
-        /// Shared object array pool for efficient memory usage during binding updates.
-        /// </summary>
-        private static readonly ArrayPool<object> sPool = ArrayPool<object>.Shared;
-
-        /// <summary>
-        /// List of active bindings for this UI component.
-        /// </summary>
-        private new readonly  List<BindingInfo> _bindings = new(8);
-
-        private class ExpressionNode
-        {
-            public enum NodeType
-            {
-                Value,
-                Comparison,
-                Logical
-            }
-
-            public NodeType Type { get; set; }
-            public string Operator { get; set; }
-            public ExpressionNode Left { get; set; }
-            public ExpressionNode Right { get; set; }
-            public BindingInfo Binding { get; set; }
-            public object Value { get; set; }
-        }
+        private new readonly List<BindingInfo> _bindings = new(8);
 
         private ExpressionNode _expressionTree;
 
         /// <summary>
-        /// Initializes the binding system by parsing the expression and setting up event handlers.
+        ///     Initializes the binding system by parsing the expression and setting up event handlers.
         /// </summary>
         public override void Start()
         {
@@ -125,10 +111,7 @@ namespace TowerDefense.UI.Binding
             try
             {
                 _expressionTree = ParseExpressionTree(_expression);
-                if (_expressionTree == null)
-                {
-                    throw new ArgumentException($"Failed to parse expression: {_expression}");
-                }
+                if (_expressionTree == null) throw new ArgumentException($"Failed to parse expression: {_expression}");
 
                 CollectBindings(_expressionTree);
                 EvaluateExpressionTree();
@@ -140,34 +123,30 @@ namespace TowerDefense.UI.Binding
         }
 
         /// <summary>
-        /// Called when any binding is updated.
+        ///     Cleans up event listeners when the component is destroyed.
+        /// </summary>
+        private void OnDestroy()
+        {
+            if (_bindings != null)
+            {
+                foreach (BindingInfo binding in _bindings)
+                    if (binding.Event != null && binding.Source != null && binding.Handler != null)
+                        binding.Event.RemoveEventHandler(binding.Source, binding.Handler);
+                _bindings.Clear();
+            }
+        }
+
+        /// <summary>
+        ///     Called when any binding is updated.
         /// </summary>
         protected override void OnBindingUpdated(int bindingIndex, object[] args)
         {
             EvaluateExpressionTree();
         }
 
-        /// <summary>
-        /// Cleans up event listeners when the component is destroyed.
-        /// </summary>
-        private void OnDestroy()
-        {
-            if (_bindings != null)
-            {
-                foreach (var binding in _bindings)
-                {
-                    if (binding.Event != null && binding.Source != null && binding.Handler != null)
-                    {
-                        binding.Event.RemoveEventHandler(binding.Source, binding.Handler);
-                    }
-                }
-                _bindings.Clear();
-            }
-        }
-        
 
         /// <summary>
-        /// Generic callback method invoked by reflection whenever any Bindable<T>.OnValueChanged fires.
+        ///     Generic callback method invoked by reflection whenever any Bindable<T>.OnValueChanged fires.
         /// </summary>
         /// <typeparam name="T">The type of the bound value</typeparam>
         /// <param name="_">The new value (unused)</param>
@@ -177,7 +156,7 @@ namespace TowerDefense.UI.Binding
         }
 
         /// <summary>
-        /// ParseExpressionTree: tüm logical, comparison ve parantezli ifadeleri ele alır.
+        ///     ParseExpressionTree: tüm logical, comparison ve parantezli ifadeleri ele alır.
         /// </summary>
         private ExpressionNode ParseExpressionTree(string expression)
         {
@@ -192,15 +171,13 @@ namespace TowerDefense.UI.Binding
         {
             int idx = FindOperatorOutsideParens(expr, "||");
             if (idx >= 0)
-            {
                 return new ExpressionNode
                 {
-                    Type     = ExpressionNode.NodeType.Logical,
+                    Type = ExpressionNode.NodeType.Logical,
                     Operator = "||",
-                    Left     = ParseLogicalOr(expr.Substring(0, idx)),
-                    Right    = ParseLogicalAnd(expr.Substring(idx + 2))
+                    Left = ParseLogicalOr(expr.Substring(0, idx)),
+                    Right = ParseLogicalAnd(expr.Substring(idx + 2))
                 };
-            }
             return ParseLogicalAnd(expr);
         }
 
@@ -209,36 +186,31 @@ namespace TowerDefense.UI.Binding
         {
             int idx = FindOperatorOutsideParens(expr, "&&");
             if (idx >= 0)
-            {
                 return new ExpressionNode
                 {
-                    Type     = ExpressionNode.NodeType.Logical,
+                    Type = ExpressionNode.NodeType.Logical,
                     Operator = "&&",
-                    Left     = ParseLogicalAnd(expr.Substring(0, idx)),
-                    Right    = ParseComparison(expr.Substring(idx + 2))
+                    Left = ParseLogicalAnd(expr.Substring(0, idx)),
+                    Right = ParseComparison(expr.Substring(idx + 2))
                 };
-            }
             return ParseComparison(expr);
         }
 
-        // üst seviye karşılaştırma
-        private static readonly string[] ComparisonOps = { ">=", "<=", "==", "!=", ">", "<" };
         private ExpressionNode ParseComparison(string expr)
         {
-            foreach (var op in ComparisonOps)
+            foreach (string op in ComparisonOps)
             {
                 int idx = FindOperatorOutsideParens(expr, op);
                 if (idx >= 0)
-                {
                     return new ExpressionNode
                     {
-                        Type     = ExpressionNode.NodeType.Comparison,
+                        Type = ExpressionNode.NodeType.Comparison,
                         Operator = op,
-                        Left     = ParseComparison(expr.Substring(0, idx)),
-                        Right    = ParsePrimary(expr.Substring(idx + op.Length))
+                        Left = ParseComparison(expr.Substring(0, idx)),
+                        Right = ParsePrimary(expr.Substring(idx + op.Length))
                     };
-                }
             }
+
             return ParsePrimary(expr);
         }
 
@@ -261,6 +233,7 @@ namespace TowerDefense.UI.Binding
                         break;
                     }
                 }
+
                 if (depth == 0)
                     return ParseExpressionTree(expr.Substring(1, expr.Length - 2));
             }
@@ -274,17 +247,17 @@ namespace TowerDefense.UI.Binding
                 return new ExpressionNode { Type = ExpressionNode.NodeType.Value, Value = d };
 
             // aksi halde binding ifadesi (örneğin MenuScene.Gold)
-            var info = ParseExpression(expr);
+            BindingInfo info = ParseExpression(expr);
             return new ExpressionNode
             {
-                Type    = ExpressionNode.NodeType.Value,
+                Type = ExpressionNode.NodeType.Value,
                 Binding = info,
-                Value   = info.Getter()
+                Value = info.Getter()
             };
         }
 
         /// <summary>
-        /// Parantez derinliğine bakarak operatörü expr içinde derinlik 0 iken arar.
+        ///     Parantez derinliğine bakarak operatörü expr içinde derinlik 0 iken arar.
         /// </summary>
         private int FindOperatorOutsideParens(string expr, string op)
         {
@@ -293,8 +266,14 @@ namespace TowerDefense.UI.Binding
             for (int i = expr.Length - op.Length; i >= 0; i--)
             {
                 char c = expr[i];
-                if (c == ')') depth++;
-                else if (c == '(') depth--;
+                if (c == ')')
+                {
+                    depth++;
+                }
+                else if (c == '(')
+                {
+                    depth--;
+                }
                 else if (depth == 0)
                 {
                     // substring ile op araması
@@ -307,25 +286,28 @@ namespace TowerDefense.UI.Binding
                             break;
                         }
                     }
+
                     if (match) return i;
                 }
             }
+
             return -1;
-        }        
+        }
+
         /// <summary>
-        /// Creates a handler for the Bindable<T>.OnValueChanged event.
+        ///     Creates a handler for the Bindable<T>.OnValueChanged event.
         /// </summary>
         private Delegate CreateValueChangedHandler(Type bindableType)
         {
             // 1) bindableType == typeof(Bindable<T>), ondan gerçek T tipini alıyoruz:
-            var valueType = bindableType.GetGenericArguments()[0];
+            Type valueType = bindableType.GetGenericArguments()[0];
 
             // 2) EventInfo’den gerçek handler tipini (Action<T>) çek:
-            var eventInfo = bindableType.GetEvent("OnValueChanged", BindingFlags.Instance | BindingFlags.Public)!;
-            var handlerType = eventInfo.EventHandlerType!;
+            EventInfo eventInfo = bindableType.GetEvent("OnValueChanged", BindingFlags.Instance | BindingFlags.Public)!;
+            Type handlerType = eventInfo.EventHandlerType!;
 
             // 3) Bu sınıftaki OnValueChanged<T>(T _) metodunu T ile oluştur:
-            var method = this.GetType()
+            MethodInfo method = GetType()
                 .GetMethod(nameof(OnValueChanged), BindingFlags.NonPublic | BindingFlags.Instance)!
                 .MakeGenericMethod(valueType);
 
@@ -344,34 +326,30 @@ namespace TowerDefense.UI.Binding
 
             // 1) Bool literal?
             if (bool.TryParse(value, out bool boolValue))
-            {
                 return new ExpressionNode
                 {
-                    Type  = ExpressionNode.NodeType.Value,
+                    Type = ExpressionNode.NodeType.Value,
                     Value = boolValue
                 };
-            }
 
             // 2) Numeric literal?
             if (double.TryParse(value, out double numValue))
-            {
                 return new ExpressionNode
                 {
-                    Type  = ExpressionNode.NodeType.Value,
+                    Type = ExpressionNode.NodeType.Value,
                     Value = numValue
                 };
-            }
 
             // 3) O zaman binding deniyoruz:
-            var binding = ParseExpression(value);
+            BindingInfo binding = ParseExpression(value);
             if (binding.Prop != null)
             {
-                var bindingValue = binding.Getter();
+                object bindingValue = binding.Getter();
                 return new ExpressionNode
                 {
-                    Type    = ExpressionNode.NodeType.Value,
+                    Type = ExpressionNode.NodeType.Value,
                     Binding = binding,
-                    Value   = bindingValue
+                    Value = bindingValue
                 };
             }
 
@@ -385,20 +363,15 @@ namespace TowerDefense.UI.Binding
             if (node == null) return;
 
             if (node.Type == ExpressionNode.NodeType.Value && node.Binding.Source != null && node.Binding.Prop != null)
-            {
                 try
                 {
                     _bindings.Add(node.Binding);
-                    if (node.Binding.Event != null && node.Binding.Source != null && node.Binding.Handler != null)
-                    {
-                        node.Binding.Event.AddEventHandler(node.Binding.Source, node.Binding.Handler);
-                    }
+                    if (node.Binding.Event != null && node.Binding.Source != null && node.Binding.Handler != null) node.Binding.Event.AddEventHandler(node.Binding.Source, node.Binding.Handler);
                 }
                 catch (Exception ex)
                 {
                     LoggerExtra.LogError($"[{name}] UIBoolBinding: Failed to add event handler: {ex.Message}", this);
                 }
-            }
 
             CollectBindings(node.Left);
             CollectBindings(node.Right);
@@ -426,25 +399,19 @@ namespace TowerDefense.UI.Binding
             {
                 case ExpressionNode.NodeType.Value:
                     if (node.Binding.Prop == null) return node.Value.ToBool();
-                    var value = node.Binding.Getter();
-                    if (value == null)
-                    {
-                        throw new InvalidOperationException($"Binding value is null for {node.Binding.Prop.Name}");
-                    }
+                    object value = node.Binding.Getter();
+                    if (value == null) throw new InvalidOperationException($"Binding value is null for {node.Binding.Prop.Name}");
                     return value.ToBool();
 
                 case ExpressionNode.NodeType.Comparison:
-                    var leftValue = GetNodeValue(node.Left);
-                    var rightValue = GetNodeValue(node.Right);
-                    
-                    if (leftValue == null || rightValue == null)
-                    {
-                        throw new InvalidOperationException("Comparison operands cannot be null");
-                    }
+                    object leftValue = GetNodeValue(node.Left);
+                    object rightValue = GetNodeValue(node.Right);
+
+                    if (leftValue == null || rightValue == null) throw new InvalidOperationException("Comparison operands cannot be null");
 
                     double leftNum = leftValue.ToDouble();
                     double rightNum = rightValue.ToDouble();
-                    
+
                     switch (node.Operator)
                     {
                         case ">=": return leftNum >= rightNum;
@@ -457,9 +424,9 @@ namespace TowerDefense.UI.Binding
                     }
 
                 case ExpressionNode.NodeType.Logical:
-                    var leftResult = EvaluateNode(node.Left);
-                    var rightResult = EvaluateNode(node.Right);
-                    
+                    bool leftResult = EvaluateNode(node.Left);
+                    bool rightResult = EvaluateNode(node.Right);
+
                     switch (node.Operator)
                     {
                         case "&&": return leftResult && rightResult;
@@ -474,29 +441,25 @@ namespace TowerDefense.UI.Binding
 
         private object GetNodeValue(ExpressionNode node)
         {
-            if (node == null)
-            {
-                throw new ArgumentNullException(nameof(node));
-            }
+            if (node == null) throw new ArgumentNullException(nameof(node));
 
             if (node.Type == ExpressionNode.NodeType.Value)
             {
                 if (node.Binding.Prop != null)
                 {
-                    var value = node.Binding.Getter();
-                    if (value == null)
-                    {
-                        throw new InvalidOperationException($"Binding value is null for {node.Binding.Prop.Name}");
-                    }
+                    object value = node.Binding.Getter();
+                    if (value == null) throw new InvalidOperationException($"Binding value is null for {node.Binding.Prop.Name}");
                     return value;
                 }
+
                 return node.Value;
             }
+
             return EvaluateNode(node);
         }
 
         /// <summary>
-        /// Parses an expression into a BindingInfo.
+        ///     Parses an expression into a BindingInfo.
         /// </summary>
         private BindingInfo ParseExpression(string expr)
         {
@@ -518,7 +481,7 @@ namespace TowerDefense.UI.Binding
                 return default;
             }
 
-            var prop = ctx.GetType().GetProperty(propName);
+            PropertyInfo prop = ctx.GetType().GetProperty(propName);
             if (prop == null)
             {
                 LoggerExtra.LogError($"[{name}] UIBoolBinding: property '{propName}' not found on {ctx.GetType().Name}", this);
@@ -526,7 +489,7 @@ namespace TowerDefense.UI.Binding
             }
 
             // Get the Bindable property value
-            var bindableValue = prop.GetValue(ctx);
+            object bindableValue = prop.GetValue(ctx);
             if (bindableValue == null)
             {
                 LoggerExtra.LogError($"[{name}] UIBoolBinding: property '{propName}' is null on {ctx.GetType().Name}", this);
@@ -534,7 +497,7 @@ namespace TowerDefense.UI.Binding
             }
 
             // Get the Value property from Bindable
-            var valueProp = bindableValue.GetType().GetProperty("Value");
+            PropertyInfo valueProp = bindableValue.GetType().GetProperty("Value");
             if (valueProp == null)
             {
                 LoggerExtra.LogError($"[{name}] UIBoolBinding: Value property not found on {bindableValue.GetType().Name}", this);
@@ -542,14 +505,14 @@ namespace TowerDefense.UI.Binding
             }
 
             // Get the OnValueChanged event from the Bindable instance
-            var eventInfo = bindableValue.GetType().GetEvent("OnValueChanged");
+            EventInfo eventInfo = bindableValue.GetType().GetEvent("OnValueChanged");
             if (eventInfo == null)
             {
                 LoggerExtra.LogError($"[{name}] UIBoolBinding: OnValueChanged event not found on {bindableValue.GetType().Name}", this);
                 return default;
             }
 
-            var handler = CreateValueChangedHandler(bindableValue.GetType());
+            Delegate handler = CreateValueChangedHandler(bindableValue.GetType());
             if (handler == null)
             {
                 LoggerExtra.LogError($"[{name}] UIBoolBinding: failed to create handler for {bindableValue.GetType().Name}", this);
@@ -565,6 +528,23 @@ namespace TowerDefense.UI.Binding
                 eventInfo,
                 handler
             );
+        }
+
+        private class ExpressionNode
+        {
+            public enum NodeType
+            {
+                Value,
+                Comparison,
+                Logical
+            }
+
+            public NodeType Type { get; set; }
+            public string Operator { get; set; }
+            public ExpressionNode Left { get; set; }
+            public ExpressionNode Right { get; set; }
+            public BindingInfo Binding { get; set; }
+            public object Value { get; set; }
         }
     }
 }

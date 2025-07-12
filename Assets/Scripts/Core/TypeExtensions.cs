@@ -129,8 +129,9 @@ namespace TowerDefense.Core
                 intList.Add(obj.ToInt());
             return intList;
         }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float InvSqrt(float x)//quake <3
+        public static float InvSqrt(float x) //quake <3
         {
             unsafe
             {

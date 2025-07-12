@@ -1,5 +1,5 @@
-using System;
 using System.Collections;
+using System.Collections.Generic;
 using TowerDefense.Core;
 using TowerDefense.Model;
 using TowerDefense.Pooling;
@@ -10,27 +10,28 @@ namespace TowerDefense.Controller
 {
     public class WaveSpawnController : MonoBehaviour
     {
-        [Header("Wave Settings")]
-        [SerializeField] private WaveConfig _waveConfig;
+        [Header("Wave Settings")] [SerializeField]
+        private WaveConfig _waveConfig;
 
         private int _activeEnemyCount;
         private int _currentWaveIndex;
         private EnemyPool _enemyPool;
-        void Awake()
+
+        private void Awake()
         {
             EventManager.OnGameStateChanged += OnGameStateChanged;
             EventManager.OnPlayerAction += PlayerACtionHandlerForSpawn;
             if (GameManager.Instance.CurrentScene is GameScene scene) _enemyPool = scene.EnemyPool;
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
             EventManager.OnGameStateChanged -= OnGameStateChanged;
         }
 
         private void PlayerACtionHandlerForSpawn(Enums.PlayerActions type, int value)
         {
-            switch(type)
+            switch (type)
             {
                 case Enums.PlayerActions.GetDamage:
                 case Enums.PlayerActions.EnemyKilled:
@@ -38,20 +39,15 @@ namespace TowerDefense.Controller
                     break;
             }
 
-            if (_activeEnemyCount == 0)
-            {
-                EventManager.GameStateChanged(Enums.GameState.Preparing);
-            }
-        }
-        private void OnGameStateChanged(Enums.GameState state)
-        {
-            if (state == Enums.GameState.Playing)
-            {
-                StartNextWave();
-            }
+            if (_activeEnemyCount == 0) EventManager.GameStateChanged(Enums.GameState.Preparing);
         }
 
-        void StartNextWave()
+        private void OnGameStateChanged(Enums.GameState state)
+        {
+            if (state == Enums.GameState.Playing) StartNextWave();
+        }
+
+        private void StartNextWave()
         {
             if (_currentWaveIndex >= _waveConfig.Waves.Count)
             {
@@ -59,7 +55,7 @@ namespace TowerDefense.Controller
                 return;
             }
 
-            var wave = _waveConfig.Waves[_currentWaveIndex];
+            WaveModel wave = _waveConfig.Waves[_currentWaveIndex];
             StartCoroutine(SpawnWaveRoutine(wave));
             _currentWaveIndex++;
         }
@@ -67,17 +63,18 @@ namespace TowerDefense.Controller
         private IEnumerator SpawnWaveRoutine(WaveModel wave)
         {
             float interval = 1f / wave.SpawnRatePerSecond;
-            var tempList = wave.Enemy;
-            var count = tempList.Count;
+            List<SpawnModel> tempList = wave.Enemy;
+            int count = tempList.Count;
             for (int i = 0; i < count; i++)
             {
-                var enemy = tempList[i];
+                SpawnModel enemy = tempList[i];
                 int enemyCount = enemy.Count;
                 for (int j = 0; j < enemyCount; j++)
                 {
                     _enemyPool.GetEnemy(enemy.EnemyType);
                     yield return new WaitForSeconds(interval);
                 }
+
                 _activeEnemyCount += enemyCount;
             }
         }

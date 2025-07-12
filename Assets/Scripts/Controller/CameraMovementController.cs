@@ -1,28 +1,29 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.EnhancedTouch;
+using UnityEngine.InputSystem.Controls;
+using TouchPhase = UnityEngine.InputSystem.TouchPhase;
 
 namespace TowerDefense.Controller
 {
     [RequireComponent(typeof(Camera))]
     public class CameraMovementController : MonoBehaviour
     {
-        [Header("Pan Settings")]
-        public float PanSpeedTouch = 0.01f; // tek parmakla sürükleme hızı (mobil)
+        [Header("Pan Settings")] public float PanSpeedTouch = 0.01f; // tek parmakla sürükleme hızı (mobil)
+
         public float PanSpeedMouse = 0.1f; // sağ‐tık sürükleme hızı (PC)
 
-        [Header("Zoom Settings")]
-        public float ZoomSpeedTouch = 0.02f; // iki parmak pinch hassasiyeti (mobil)
+        [Header("Zoom Settings")] public float ZoomSpeedTouch = 0.02f; // iki parmak pinch hassasiyeti (mobil)
+
         public float ZoomSpeedWheel = 1f; // mouse wheel hassasiyeti (PC)
         public float MinZoom = 5f;
         public float MaxZoom = 20f;
 
-        Camera _cam;
-        Vector3 _lastPanPos;
-        bool _isPanningMouse;
-        float _lastPinchDist;
+        private Camera _cam;
+        private bool _isPanningMouse;
+        private Vector3 _lastPanPos;
+        private float _lastPinchDist;
 
-        void Awake()
+        private void Awake()
         {
             // TouchSimulation.Enable(); // mouse/pen → Touchscreen
             // EnhancedTouchSupport.Enable(); // EnhancedTouch API’leriyle de çalışır
@@ -30,24 +31,25 @@ namespace TowerDefense.Controller
             _cam.orthographic = true;
         }
 
-        void LateUpdate()
+        private void LateUpdate()
         {
-            #if UNITY_IOS || UNITY_ANDROID
-                // Mobil: tek parmak pan, iki parmak pinch
-                if (Touchscreen.current != null && Touchscreen.current.touches.Count > 0)
-                {
-                    if (Touchscreen.current.touches.Count == 1)
-                        HandleTouchPan();
-                    else if (Touchscreen.current.touches.Count == 2)
-                        HandlePinchZoom();
-                }
-                HandleScrollZoom(); // bazı mobil trackpad'ler de scroll gönderebilir
+#if UNITY_IOS || UNITY_ANDROID
+            // Mobil: tek parmak pan, iki parmak pinch
+            if (Touchscreen.current != null && Touchscreen.current.touches.Count > 0)
+            {
+                if (Touchscreen.current.touches.Count == 1)
+                    HandleTouchPan();
+                else if (Touchscreen.current.touches.Count == 2)
+                    HandlePinchZoom();
+            }
 
-            #elif UNITY_STANDALONE || UNITY_EDITOR || UNITY_WEBGL
+            HandleScrollZoom(); // bazı mobil trackpad'ler de scroll gönderebilir
+
+#elif UNITY_STANDALONE || UNITY_EDITOR || UNITY_WEBGL
                 // // PC/Editör/WebGL: sağ‐tık drag + scroll wheel
                 // HandleMousePan();
                 // HandleScrollZoom();
-            #endif
+#endif
         }
 
         private void HandleMousePan()
@@ -75,13 +77,15 @@ namespace TowerDefense.Controller
 
         private void HandleTouchPan()
         {
-            var touch = Touchscreen.current.touches[0];
-            var phase = touch.phase.ReadValue();
+            TouchControl touch = Touchscreen.current.touches[0];
+            TouchPhase phase = touch.phase.ReadValue();
             Vector2 pos = touch.position.ReadValue();
 
-            if (phase == UnityEngine.InputSystem.TouchPhase.Began)
+            if (phase == TouchPhase.Began)
+            {
                 _lastPanPos = pos;
-            else if (phase == UnityEngine.InputSystem.TouchPhase.Moved)
+            }
+            else if (phase == TouchPhase.Moved)
             {
                 Vector3 delta = (Vector3)pos - _lastPanPos;
                 PanCamera(delta, PanSpeedTouch);
@@ -91,13 +95,13 @@ namespace TowerDefense.Controller
 
         private void HandlePinchZoom()
         {
-            var t0 = Touchscreen.current.touches[0];
-            var t1 = Touchscreen.current.touches[1];
+            TouchControl t0 = Touchscreen.current.touches[0];
+            TouchControl t1 = Touchscreen.current.touches[1];
             Vector2 p0 = t0.position.ReadValue();
             Vector2 p1 = t1.position.ReadValue();
             float dist = Vector2.Distance(p0, p1);
 
-            if (t1.phase.ReadValue() == UnityEngine.InputSystem.TouchPhase.Began)
+            if (t1.phase.ReadValue() == TouchPhase.Began)
             {
                 _lastPinchDist = dist;
                 return;
@@ -118,10 +122,12 @@ namespace TowerDefense.Controller
 
         private void PanCamera(Vector3 delta, float speed)
         {
-            Vector3 right = transform.right; right.y = 0;
-            Vector3 forward = transform.forward; forward.y = 0;
+            Vector3 right = transform.right;
+            right.y = 0;
+            Vector3 forward = transform.forward;
+            forward.y = 0;
             Vector3 move = -delta.x * right * speed
-                             -delta.y * forward * speed;
+                           - delta.y * forward * speed;
             transform.position += move;
         }
 

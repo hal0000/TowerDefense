@@ -10,9 +10,9 @@ namespace TowerDefense.Pooling
     {
         public List<EnemyTypeDefinition> EnemyTypeDefinitions = new();
 
-        readonly Dictionary<Enums.EnemyType, Queue<EnemyController>> _enemyPools = new();
-        readonly Dictionary<Enums.EnemyType, EnemyModel> _models = new();
-        IReadOnlyList<Vector3> _sharedPath;
+        private readonly Dictionary<Enums.EnemyType, Queue<EnemyController>> _enemyPools = new();
+        private readonly Dictionary<Enums.EnemyType, EnemyModel> _models = new();
+        private IReadOnlyList<Vector3> _sharedPath;
 
         public void InitializePools(List<EnemyModel> models, IReadOnlyList<Vector3> path)
         {
@@ -22,7 +22,7 @@ namespace TowerDefense.Pooling
 
             for (int m = 0; m < models.Count; m++)
             {
-                var model = models[m];
+                EnemyModel model = models[m];
                 _models[model.Type] = model;
 
                 EnemyTypeDefinition def = null;
@@ -38,10 +38,10 @@ namespace TowerDefense.Pooling
                 if (def == null)
                     throw new ArgumentOutOfRangeException(nameof(model.Type));
 
-                var pool = new Queue<EnemyController>(def.PoolSize);
+                Queue<EnemyController> pool = new Queue<EnemyController>(def.PoolSize);
                 for (int i = 0; i < def.PoolSize; i++)
                 {
-                    var e = Instantiate(def.Prefab, transform);
+                    EnemyController e = Instantiate(def.Prefab, transform);
                     e.gameObject.SetActive(false);
                     e.Initialize(model, path);
                     pool.Enqueue(e);
@@ -53,10 +53,10 @@ namespace TowerDefense.Pooling
 
         public EnemyController GetEnemy(Enums.EnemyType type)
         {
-            if (!_enemyPools.TryGetValue(type, out var pool)) return null;
+            if (!_enemyPools.TryGetValue(type, out Queue<EnemyController> pool)) return null;
             if (pool.Count > 0)
             {
-                var e = pool.Dequeue();
+                EnemyController e = pool.Dequeue();
                 e.OnSpawn();
                 e.gameObject.SetActive(true);
                 return e;
@@ -69,10 +69,11 @@ namespace TowerDefense.Pooling
                 def = EnemyTypeDefinitions[j];
                 break;
             }
+
             if (def == null) return null;
 
-            var model = _models[type];
-            var eNew = Instantiate(def.Prefab, transform);
+            EnemyModel model = _models[type];
+            EnemyController eNew = Instantiate(def.Prefab, transform);
             eNew.Initialize(model, _sharedPath);
             eNew.OnSpawn();
             eNew.gameObject.SetActive(true);
@@ -81,11 +82,12 @@ namespace TowerDefense.Pooling
 
         public void ReturnEnemy(Enums.EnemyType type, EnemyController enemy)
         {
-            if (!_enemyPools.TryGetValue(type, out var pool))
+            if (!_enemyPools.TryGetValue(type, out Queue<EnemyController> pool))
             {
                 Destroy(enemy.gameObject);
                 return;
             }
+
             pool.Enqueue(enemy);
             enemy.gameObject.SetActive(false);
         }
