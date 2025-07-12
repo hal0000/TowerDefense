@@ -65,6 +65,9 @@ namespace TowerDefense.Controller
             float interval = 1f / wave.SpawnRatePerSecond;
             List<SpawnModel> tempList = wave.Enemy;
             int count = tempList.Count;
+            _activeEnemyCount = 0;
+            foreach (var spawn in wave.Enemy)
+                _activeEnemyCount += spawn.Count;
             for (int i = 0; i < count; i++)
             {
                 SpawnModel enemy = tempList[i];
@@ -74,8 +77,6 @@ namespace TowerDefense.Controller
                     _enemyPool.GetEnemy(enemy.EnemyType);
                     yield return new WaitForSeconds(interval);
                 }
-
-                _activeEnemyCount += enemyCount;
             }
         }
     }
