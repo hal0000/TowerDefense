@@ -68,6 +68,46 @@ namespace TowerDefense.Core
             OnPlayerAction?.Invoke(type,value);
         }
         #endregion
+        
+        #region GameStateActions
 
+        /// <summary>
+        /// Delegate for handling player events.
+        /// </summary>
+        public delegate void GameState(Enums.GameState type);
+
+        /// <summary>
+        /// Event triggered when a player make an action
+        /// </summary>
+        public static event GameState OnGameStateChanged;
+        
+
+        /// <summary>
+        /// Notifies subscribers that a player did something
+        /// </summary>
+        public static void GameStateChanged(Enums.GameState type)
+        {
+            OnGameStateChanged?.Invoke(type);
+        }
+        #endregion
+        /// <summary>
+        /// Delegate for handling notification events.
+        /// </summary>
+        /// <param name="type">The type of notification to display</param>
+        public delegate void NotificationEvent(Enums.NotificationType type);
+        
+        /// <summary>
+        /// Event triggered when a new notification needs to be displayed.
+        /// </summary>
+        public static event NotificationEvent OnNewNotification;
+
+        /// <summary>
+        /// Notifies subscribers that a new notification should be displayed.
+        /// </summary>
+        /// <param name="type">The type of notification to display</param>
+        public static void NewNotificationHappened(Enums.NotificationType type)
+        {
+            OnNewNotification?.Invoke(type);
+        }
     }
 }

@@ -13,6 +13,7 @@ namespace TowerDefense.Model
         public float TurnRadius;
         public int Damage;
         public int Health;
+        public int Gold;
     }
 
     [Serializable]

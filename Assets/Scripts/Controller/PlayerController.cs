@@ -12,11 +12,11 @@ namespace TowerDefense.Controller
         public Bindable<int> Gold { get; private set; }
         public Bindable<int> Level { get; private set; }
         public Bindable<int> Health { get; private set; }
-        private PlayerModel _model;
+        public PlayerModel Model;
         
         public void Initialize(PlayerModel model)
         {
-            _model = model;
+            Model = model;
             RegisterBindingContext();
             SetBindingData();
             EventManager.OnPlayerAction += PlayerAction;
@@ -27,19 +27,25 @@ namespace TowerDefense.Controller
             switch (type)
             {
                 case Enums.PlayerActions.GetDamage:
-                    _model.Health.Value -= value;
-                    if (_model.Health.Value <= 0)
+                    Model.Health.Value -= 1;
+                    if (Model.Health.Value <= 0)
                     {
-                        //EventManager.gamestate changed to gameover
+                        EventManager.GameStateChanged(Enums.GameState.GameOver);
                     }
                     break;
+                case Enums.PlayerActions.EnemyKilled:
+                    Model.Gold.Value += value;
+                    break;
                 case Enums.PlayerActions.SpendGold:
-                    _model.Gold.Value -= value;
+                    Model.Gold.Value -= value;
+                    break;
+                case Enums.PlayerActions.NewLevel:
+                    Model.Level.Value++;
                     break;
                 case Enums.PlayerActions.GameOver:
-                    _model.Health.Value -= _model.DefaultHealth;
-                    _model.Gold.Value -= _model.DefaultGold;
-                    _model.Level.Value -= _model.DefaulLevel;
+                    Model.Health.Value = Model.DefaultHealth;
+                    Model.Gold.Value = Model.DefaultGold;
+                    Model.Level.Value = Model.DefaulLevel;
                     break;
             }
         }
@@ -50,9 +56,9 @@ namespace TowerDefense.Controller
             // Level = new Bindable<int>(_model.LevelData);
             // Health = new Bindable<int>(_model.HealthData);
 
-            Gold = _model.Gold;
-            Health = _model.Health;
-            Level = _model.Level;
+            Gold = Model.Gold;
+            Health = Model.Health;
+            Level = Model.Level;
         }
         public void RegisterBindingContext() => BindingContextRegistry.Register(GetType().Name, this);
         public void UnregisterBindingContext() => BindingContextRegistry.Unregister(GetType().Name, this);

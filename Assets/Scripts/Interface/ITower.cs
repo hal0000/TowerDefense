@@ -1,9 +1,11 @@
+using System.Collections.Generic;
+using UnityEngine;
+
 namespace TowerDefense.Interface
 {
     public interface ITower
     {
-        public void GetDamage();
-        public void Shoot();
-        public void Sell();
+        public void Bauen(List<int> positions);
+        public void Abbrechen();
     }
 }

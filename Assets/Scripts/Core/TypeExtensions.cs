@@ -135,10 +135,10 @@ namespace TowerDefense.Core
             unsafe
             {
                 float xhalf = 0.5f * x;
-                int i = *(int*)&x;               // float bits -> int
-                i = 0x5f3759df - (i >> 1);       // magic
-                x = *(float*)&i;                 // int bits -> float
-                x = x * (1.5f - xhalf * x * x);  // 1. iteration
+                int i = *(int*)&x; // float bits -> int
+                i = 0x5f3759df - (i >> 1); // magic
+                x = *(float*)&i; // int bits -> float
+                x = x * (1.5f - xhalf * x * x); // 1. iteration
                 return x;
             }
         }

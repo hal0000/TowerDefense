@@ -1,8 +1,9 @@
-// TowerDefense/Controller/TowerController.cs
-
+using System.Collections.Generic;
+using NUnit.Framework;
 using TowerDefense.Core;
 using TowerDefense.Interface;
 using TowerDefense.Model;
+using TowerDefense.UI.Binding;
 using UnityEngine;
 
 namespace TowerDefense.Controller
@@ -13,13 +14,17 @@ namespace TowerDefense.Controller
     public class TowerController : MonoBehaviourExtra, ITower
     {
         public TowerModel Model;
-
+        public WeaponController WeaponController;
         /// <summary>Number of rows in the footprint grid.</summary>
         public int Rows => Model.Rows;
 
         /// <summary>Number of cols in the footprint grid.</summary>
         public int Cols => Model.Cols;
 
+        [SerializeField] private Canvas _canvas;
+
+        public Bindable<int> TowerState = new();
+        public List<int> OccupiedCells = new List<int>();
         /// <summary>
         /// Fast access into the flat byte[]: returns 1 for occupied, 0 for empty.
         /// </summary>
@@ -39,11 +44,15 @@ namespace TowerDefense.Controller
             get => Model.PackedPosition;
             set => Model.SetPosition(value);
         }
-        
+
+        public bool CanIEdit;
         public void Initialize(TowerModel model)
         {
             Model = model;
-
+            TowerState.Value = 0;
+            _canvas.gameObject.SetActive(true);
+            WeaponController.FireRate = model.FireRate;
+            WeaponController.Damage = model.Damage;
         }
 
         protected override void Tick()
@@ -51,19 +60,21 @@ namespace TowerDefense.Controller
             
         }
 
-        public void GetDamage()
+        public void Bauen(List<int> positions)
         {
-            throw new System.NotImplementedException();
+            CanvasHandler(false);
+            CanIEdit = true;
         }
 
-        public void Shoot()
+        public void Abbrechen()
         {
-            throw new System.NotImplementedException();
+            CanvasHandler(false);
+            Destroy(gameObject);
         }
-
-        public void Sell()
+        public void CanvasHandler(bool show)
         {
-            throw new System.NotImplementedException();
+            _canvas.gameObject.SetActive(show);
+            //GridInputHandler.Instance.StartMove(this);
         }
     }
 }

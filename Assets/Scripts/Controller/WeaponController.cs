@@ -6,13 +6,14 @@ namespace TowerDefense.Controller
 {
     public class WeaponController : MonoBehaviourExtra
     {
+        [HideInInspector] public float FireRate = 1f;
+        [HideInInspector] public int Damage = 1;
         private static GameScene _scene;
         private float _cooldown;
         private Collider[] _hitBuffer;
-
+        
         [Header("Fire Settings")]
         [SerializeField] private Transform _firePoint;
-        [SerializeField] private float _fireRate = 1f;
         [SerializeField] private float _bulletTravelTime = 0.2f;
         [SerializeField] private Transform _barrel;
 
@@ -22,9 +23,7 @@ namespace TowerDefense.Controller
         [SerializeField] private int _maxTargets = 8;
         void Awake()
         {
-            if (_scene == null && GameManager.Instance.CurrentScene is GameScene gs)
-                _scene = gs;
-
+            if (_scene == null && GameManager.Instance.CurrentScene is GameScene gs) _scene = gs;
             _hitBuffer = new Collider[_maxTargets];
         }
         
@@ -36,30 +35,24 @@ namespace TowerDefense.Controller
                 _cooldown -= dt;
                 return;
             }
-            // non-alloc sphere overlap
-            int count = Physics.OverlapSphereNonAlloc(_firePoint.position, _range, _hitBuffer, _enemyLayer);
-
-            if (count == 0) 
-                return;
-
-            // pick the first valid enemy
-            Transform target = null;
+            Vector3 detectCenter = transform.position;
+            int count = Physics.OverlapSphereNonAlloc(detectCenter, _range, _hitBuffer, _enemyLayer);
+            if (count == 0) return;
+            IEnemy target = null;
             for (int i = 0; i < count; i++)
             {
                 var col = _hitBuffer[i];
                 if (col == null) continue;
                 if (!col.TryGetComponent<IEnemy>(out var ie)) continue;
-                ie.GetDamage();
-                target = col.transform;
+                target = ie;
                 break;
             }
             if (target == null) return;
-            _barrel.LookAt(target.position, Vector3.up);
+            _barrel.LookAt(target.GetPosition(), Vector3.up);
             _barrel.Rotate(-90f, 0f, 0f, Space.Self);
-            // fire bullet
             var bullet = _scene.BulletPool.GetBullet();
-            bullet.Initialize(_firePoint, target.transform, _bulletTravelTime);
-            _cooldown = 1f / _fireRate;
+            bullet.Initialize(_firePoint, target, Damage,_bulletTravelTime);
+            _cooldown = 1f / FireRate;
         }
 #if UNITY_EDITOR
         void OnDrawGizmosSelected()
