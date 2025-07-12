@@ -38,12 +38,13 @@ namespace TowerDefense.Controller
                     _activeEnemyCount--;
                     break;
             }
-
-            if (_activeEnemyCount == 0) EventManager.GameStateChanged(Enums.GameState.Preparing);
+            if (_activeEnemyCount == 0 && _lastState == Enums.GameState.Playing) EventManager.GameStateChanged(Enums.GameState.Preparing);
         }
 
+        private Enums.GameState _lastState;
         private void OnGameStateChanged(Enums.GameState state)
         {
+            _lastState = state;
             if (state == Enums.GameState.Playing) StartNextWave();
         }
 

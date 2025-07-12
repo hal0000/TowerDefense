@@ -11,7 +11,7 @@ namespace TowerDefense.Model
 
         public enum GameState
         {
-            Nothing = 0, // before you hit Start
+            Start = 0, // before you hit Start
             Preparing = 1, // grid exists; user picks start & end
             Editing = 2,
             Playing = 3, // path is marked, game is “in play”

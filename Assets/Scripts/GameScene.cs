@@ -18,10 +18,8 @@ namespace TowerDefense
         public GridInputHandler GridInputHandler;
         public TowerPrefabGenerator TowerPrefabGenerator;
 
-        [HideInInspector] public Enums.GameState GameState = Enums.GameState.Nothing;
+        [HideInInspector] public Enums.GameState GameState = Enums.GameState.Start;
 
-        //public List<TowerController> Towers = new List<TowerController>();
-        public List<EnemyController> Enemys;
         public RectTransform TowerButtonPrefab;
         public Transform TowerButtonPrefabContainer;
 
@@ -46,7 +44,7 @@ namespace TowerDefense
             SetBindingData();
             GetTowerList();
             SetTowerButtonUI();
-            EventManager.GameStateChanged(Enums.GameState.Nothing);
+            EventManager.GameStateChanged(Enums.GameState.Start);
         }
 
         public override void OnDestroy()
@@ -56,11 +54,11 @@ namespace TowerDefense
             UnregisterBindingContext();
         }
 
-        public void GameStateChanged(Enums.GameState newState)
+        void GameStateChanged(Enums.GameState newState)
         {
             switch (newState)
             {
-                case Enums.GameState.Nothing:
+                case Enums.GameState.Start:
                     break;
                 case Enums.GameState.Preparing:
                     _lastIndex = -1;
@@ -85,22 +83,26 @@ namespace TowerDefense
             GetEnemyList();
         }
 
+        public void RestartGame()
+        {
+            _playerController.Restart();
+            EventManager.GameStateChanged(Enums.GameState.Start);
+        }
         public void InitiateRound()
         {
             EventManager.GameStateChanged(Enums.GameState.Playing);
         }
-
         /// <summary>
         ///     API MOCKUP CALL
         /// </summary>
-        public void GetTowerList()
+        void GetTowerList()
         {
             List<TowerModel> models = GameManager.Instance.Api.GetBuildingTypes();
             TowerPrefabGenerator.GenerateTowerPrefabs(models);
             TowerModels.Value = models;
         }
 
-        public void SetTowerButtonUI()
+        void SetTowerButtonUI()
         {
             IList<TowerModel> models = TowerModels.Value;
             float x = 0f;

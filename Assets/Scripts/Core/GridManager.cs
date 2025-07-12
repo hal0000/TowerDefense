@@ -94,6 +94,7 @@ namespace TowerDefense.Core
                     int index = y * w + x; // flat‐array index
 
                     CellController go = Instantiate(CellPrefab, new Vector3(x, 0f, y), rot, transform);
+                    go.gameObject.SetActive(true);
 #if UNITY_EDITOR
                     go.name = $"Cell_{x}_{y}";
 #endif

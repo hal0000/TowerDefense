@@ -11,6 +11,7 @@ namespace TowerDefense.Controller
         public Bindable<int> Gold { get; private set; }
         public Bindable<int> Level { get; private set; }
         public Bindable<int> Health { get; private set; }
+        private Enums.GameState _lastState;
 
         public void Initialize(PlayerModel model)
         {
@@ -18,15 +19,26 @@ namespace TowerDefense.Controller
             RegisterBindingContext();
             SetBindingData();
             EventManager.OnPlayerAction += PlayerAction;
+            EventManager.OnGameStateChanged += GameStateChanged;
+
         }
 
+        private void GameStateChanged(Enums.GameState type)
+        {
+            _lastState = type;
+        }
         private void PlayerAction(Enums.PlayerActions type, int value)
         {
+            
             switch (type)
             {
                 case Enums.PlayerActions.GetDamage:
-                    Model.Health.Value -= 1;
-                    if (Model.Health.Value <= 0) EventManager.GameStateChanged(Enums.GameState.GameOver);
+                    if (_lastState == Enums.GameState.Playing)
+                    {
+                        Model.Health.Value -= 1;
+                        if (Model.Health.Value == 0) 
+                            EventManager.GameStateChanged(Enums.GameState.GameOver);
+                    }
                     break;
                 case Enums.PlayerActions.EnemyKilled:
                     Model.Gold.Value += value;
@@ -37,14 +49,15 @@ namespace TowerDefense.Controller
                 case Enums.PlayerActions.NewLevel:
                     Model.Level.Value++;
                     break;
-                case Enums.PlayerActions.GameOver:
-                    Model.Health.Value = Model.DefaultHealth;
-                    Model.Gold.Value = Model.DefaultGold;
-                    Model.Level.Value = Model.DefaulLevel;
-                    break;
             }
         }
 
+        public void Restart()
+        {
+            Model.Health.Value = Model.DefaultHealth;
+            Model.Gold.Value = Model.DefaultGold;
+            Model.Level.Value = Model.DefaulLevel;
+        }
         public void OnSoftDestroy()
         {
             EventManager.OnPlayerAction -= PlayerAction;
@@ -55,10 +68,6 @@ namespace TowerDefense.Controller
 
         public void SetBindingData()
         {
-            // Gold = new Bindable<int>(_model.GoldData);
-            // Level = new Bindable<int>(_model.LevelData);
-            // Health = new Bindable<int>(_model.HealthData);
-
             Gold = Model.Gold;
             Health = Model.Health;
             Level = Model.Level;

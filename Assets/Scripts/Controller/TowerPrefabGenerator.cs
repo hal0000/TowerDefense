@@ -48,6 +48,7 @@ namespace TowerDefense.Controller
                         cube.transform.localPosition = new Vector3(x, 0f, z);
                         cube.transform.localScale = Vector3.one * s;
                         cube.name = $"Cube_{r}_{c}";
+                        cube.SetActive(true);
                     }
                 }
 
