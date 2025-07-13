@@ -1,5 +1,8 @@
+using System;
+using TowerDefense.Animation;
 using TowerDefense.Core;
 using TowerDefense.Interface;
+using TowerDefense.Model;
 using UnityEngine;
 
 namespace TowerDefense.Controller
@@ -7,32 +10,57 @@ namespace TowerDefense.Controller
     public class WeaponController : MonoBehaviourExtra
     {
         private static GameScene _scene;
-        [HideInInspector] public float FireRate = 1f;
-        [HideInInspector] public int Damage = 1;
 
         [Header("Fire Settings")] [SerializeField]
         private Transform _firePoint;
-
+        [SerializeField] private int _maxTargets = 2;
         [SerializeField] private float _bulletTravelTime = 0.2f;
         [SerializeField] private Transform _barrel;
-
-        [Header("Targeting")] [SerializeField] private float _range = 5f;
-
+         public SphereCollider _col;
         [SerializeField] private LayerMask _enemyLayer = ~0;
-        [SerializeField] private int _maxTargets = 8;
+        [SerializeField] private AlphaLoop _rangeIndicator;
+
+        int _damage = 1;
+        private float _range = 5f;
         private float _cooldown;
+        float _fireRate = 1f;
         private Collider[] _hitBuffer;
+        
         private void Awake()
         {
             if (_scene == null && GameManager.Instance.CurrentScene is GameScene gs) _scene = gs;
             _hitBuffer = new Collider[_maxTargets];
+        }
+
+        public void Initialize(TowerModel model)
+        {
+            _fireRate = model.FireRate;
+            _damage = model.Damage;
+            _range = model.Range;
+            _col.radius = _range;
+            _rangeIndicator.transform.localScale = new Vector3(_range, _range, 1);
+        }
+        private void GameStateChanged(Enums.GameState type)
+        {
+            switch (type)
+            {
+                case Enums.GameState.Preparing:
+                case Enums.GameState.Editing:
+                    _rangeIndicator.StartAnimation();
+                    _col.enabled = false;
+                    break;
+                default:
+                    _rangeIndicator.StopAnimation();
+                    _col.enabled = true;
+                    break;
+            }
         }
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
             if (_firePoint == null) return;
             Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(_firePoint.position, _range);
+            Gizmos.DrawWireSphere(transform.position, _col.radius);
         }
 #endif
 
@@ -46,7 +74,7 @@ namespace TowerDefense.Controller
             }
 
             Vector3 detectCenter = transform.position;
-            int count = Physics.OverlapSphereNonAlloc(detectCenter, _range, _hitBuffer, _enemyLayer);
+            int count = Physics.OverlapSphereNonAlloc(detectCenter, _col.radius, _hitBuffer, _enemyLayer);
             if (count == 0) return;
             IEnemy target = null;
             for (int i = 0; i < count; i++)
@@ -62,8 +90,16 @@ namespace TowerDefense.Controller
             _barrel.LookAt(target.GetPosition(), Vector3.up);
             _barrel.Rotate(-90f, 0f, 0f, Space.Self);
             BulletController bullet = _scene.BulletPool.GetBullet();
-            bullet.Initialize(_firePoint, target, Damage, _bulletTravelTime);
-            _cooldown = 1f / FireRate;
+            bullet.Initialize(_firePoint, target, _damage, _bulletTravelTime);
+            _cooldown = 1f / _fireRate;
+        }
+        protected override void OnEnable() 
+        {
+            EventManager.OnGameStateChanged += GameStateChanged;
+        }
+        protected override void OnDisable()
+        { 
+            EventManager.OnGameStateChanged -= GameStateChanged;
         }
     }
 }

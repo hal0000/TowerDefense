@@ -3,6 +3,7 @@ using UnityEngine.InputSystem.EnhancedTouch;
 using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 using TowerDefense.Core;
 using Unity.Cinemachine;
+using UnityEngine.EventSystems;
 
 namespace TowerDefense.Controller
 {
@@ -50,12 +51,20 @@ namespace TowerDefense.Controller
             var touches = Touch.activeTouches;
             if (touches.Count == 2)
             {
+                if (EventSystem.current.IsPointerOverGameObject(touches[0].touchId) ||
+                    EventSystem.current.IsPointerOverGameObject(touches[1].touchId))
+                {
+                    return;
+                }
+
                 _isPanning = false;
                 HandlePinch(touches[0], touches[1]);
                 return;
             }
             if (touches.Count == 1)
             {
+                if (EventSystem.current.IsPointerOverGameObject(touches[0].touchId))
+                    return;
                 if (_gridInput != null && _gridInput.CanIMoveCamera) return;
                 _isPinching = false;
                 HandlePan(touches[0]);

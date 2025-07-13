@@ -62,7 +62,7 @@ namespace TowerDefense.Model
             ""Index"": 4,
             ""Name"": ""Praktikum"",
             ""Gold"": 1000,
-            ""Footprint"": [ ""1"", ""1"", ""1"" ],
+            ""Footprint"": [ ""11"", ""11"", ""11"" ],
             ""Range"": 1,
             ""Damage"": 15,
             ""Level"": 1,

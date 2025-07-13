@@ -15,34 +15,12 @@ namespace TowerDefense.Controller
         public TowerModel Model;
         public WeaponController WeaponController;
 
-        [SerializeField] private Canvas _canvas;
 
         public Bindable<int> TowerState = new();
         public List<int> OccupiedCells = new();
 
         public bool CanIEdit;
-
-        /// <summary>Number of rows in the footprint grid.</summary>
-        public int Rows => Model.Rows;
-
-        /// <summary>Number of cols in the footprint grid.</summary>
-        public int Cols => Model.Cols;
-
-        // other stats...
-        public int Range => Model.Range;
-        public int Damage => Model.Damage;
-        public int Level => Model.Level;
-        public int FireRate => Model.FireRate;
-
-        /// <summary>
-        ///     Tracks this tower’s grid position (packed int).
-        /// </summary>
-        public int PackedPosition
-        {
-            get => Model.PackedPosition;
-            set => Model.SetPosition(value);
-        }
-
+        
         public void Bauen(List<int> positions)
         {
             CanvasHandler(false);
@@ -67,9 +45,7 @@ namespace TowerDefense.Controller
         {
             Model = model;
             TowerState.Value = 0;
-            _canvas.gameObject.SetActive(true);
-            WeaponController.FireRate = model.FireRate;
-            WeaponController.Damage = model.Damage;
+            WeaponController.Initialize(model); 
         }
 
         protected override void Tick()
@@ -78,8 +54,16 @@ namespace TowerDefense.Controller
 
         public void CanvasHandler(bool show)
         {
-            _canvas.gameObject.SetActive(show);
+            WeaponController._col.enabled = !show;
             //GridInputHandler.Instance.StartMove(this);
+        }
+
+        public void Upgrade()
+        {
+            Model.Level++;
+            Model.Range += 1;
+            Model.Damage += 5;
+            WeaponController.Initialize(Model);
         }
     }
 }

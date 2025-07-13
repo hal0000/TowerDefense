@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using TowerDefense.Controller;
+using TowerDefense.Interface;
 using TowerDefense.Model;
+using TowerDefense.UI.Binding;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.Utilities;
@@ -8,7 +10,7 @@ using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
 namespace TowerDefense.Core
 {
-    public class GridInputHandler : MonoBehaviour
+    public class GridInputHandler : MonoBehaviour, IBindingContext
     {
         [Header("Ground Raycast")] [SerializeField]
         private LayerMask _groundLayer;
@@ -31,9 +33,14 @@ namespace TowerDefense.Core
         private bool _startHover;
         private TowerModel _towerModel;
 
+        public Bindable<int> TowerState  { get; } = new();
+        public Bindable<int> TowerGold  { get; } = new();
+        public Bindable<int> TowerUpgrade  { get; } = new();
+
         public bool CanIMoveCamera => _hovering;
         private void Awake()
         {
+            RegisterBindingContext();
             _cam = Camera.main;
             if (GameManager.Instance.CurrentScene is GameScene gs)
             {
@@ -74,10 +81,7 @@ namespace TowerDefense.Core
                             return;
                         }
             }
-
-            // if we’re not currently dragging a ghost, do nothing else
             if (!_startHover) return;
-            // 2) ground‐layer raycast: dragging the ghost
             int groundHits = Physics.RaycastNonAlloc(ray, _hitBuffer, Mathf.Infinity, _groundLayer);
             if (groundHits == 0) return;
             Vector3 hitPoint = _hitBuffer[0].point;
@@ -91,6 +95,7 @@ namespace TowerDefense.Core
         private void OnDestroy()
         {
             EventManager.OnGameStateChanged -= GameStateChanged;
+            UnregisterBindingContext();
         }
 
         private void GameStateChanged(Enums.GameState type)
@@ -124,6 +129,10 @@ namespace TowerDefense.Core
                     temp.CanvasHandler(true);
                     _ghostInstance.SetActive(true);
                 }
+
+                TowerGold.Value = model.Gold.ToInt();
+                TowerUpgrade.Value = model.Gold.ToInt() * model.Level;
+                TowerState.Value = (int)Enums.TowerOptions.OldTower;
             }
             else
             {
@@ -142,6 +151,11 @@ namespace TowerDefense.Core
 
                 Vector3 centerPos = _gridManager.GetCellCenter(centerPacked);
                 _ghostInstance = Instantiate(_ghostPrefab, centerPos, _ghostPrefab.transform.rotation);
+                if (_ghostInstance.TryGetComponent<TowerController>(out TowerController temp))
+                {
+                    temp.Initialize(_towerModel);
+                    temp.CanvasHandler(true);
+                }
                 _ghostInstance.GetComponent<TowerController>().Initialize(_towerModel);
                 _footprintCells.Clear();
                 int rows = _towerModel.Rows, cols = _towerModel.Cols;
@@ -171,6 +185,8 @@ namespace TowerDefense.Core
 
                 _ghostInstance.SetActive(true);
                 _canCommit = valid;
+                TowerGold.Value = model.Gold.ToInt();
+                TowerState.Value = (int)Enums.TowerOptions.NewTower;
             }
 
             _hovering = _startHover = true;
@@ -209,7 +225,6 @@ namespace TowerDefense.Core
                 if (cv != null) cv.Highlight(_canCommit);
                 _lastHighlighted.Add(p);
             }
-
             _canCommit = isValid;
         }
 
@@ -224,13 +239,20 @@ namespace TowerDefense.Core
                 return;
             }
 
-            if (!_isEditing && _scene.CanIBuyThatTower(_isEditing ? 0 : _towerModel.Gold))
+            bool playerHaveGold = _scene.CanIBuyThatTower(_isEditing ? 0 : _towerModel.Gold);
+            if (!playerHaveGold)
+            {
+                EventManager.NewNotificationHappened(Enums.NotificationType.NotEnoughGold);
+                return;
+            }
+            
+            if (!_isEditing)
                 foreach (int p in _footprintCells)
                 {
                     CellController cv = _gridManager.GetCellView(p);
                     if (cv != null) cv.Model.SetOccupied(true);
                 }
-
+            TowerState.Value = (int)Enums.TowerOptions.Nothing;
             GameObject go = Instantiate(_ghostInstance, _ghostInstance.transform.position, _ghostInstance.transform.rotation);
             if (go.TryGetComponent<TowerController>(out TowerController temp))
             {
@@ -271,6 +293,7 @@ namespace TowerDefense.Core
             if (_ghostInstance != null) DestroyImmediate(_ghostInstance.gameObject);
             ClearGhostHighlights();
             EventManager.GameStateChanged(Enums.GameState.Preparing);
+            TowerState.Value = (int)Enums.TowerOptions.Nothing;
         }
 
         private void ClearGhostHighlights()
@@ -283,6 +306,55 @@ namespace TowerDefense.Core
             }
 
             _lastHighlighted.Clear();
+        }
+
+        public void DeleteTower()
+        {
+            if (_pickedTower != null)
+            {
+                List<int> temp = _pickedTower.OccupiedCells;
+                foreach (int p in temp)
+                {
+                    CellController cv = _gridManager.GetCellView(p);
+                    if (cv != null) cv.Model.SetOccupied(false);
+                }
+                Destroy(_pickedTower.gameObject);
+                _canCommit = false;
+                _pickedTower = null;
+            }
+            _isEditing = _hovering = _startHover = false;
+            if (_ghostInstance != null) DestroyImmediate(_ghostInstance.gameObject);
+            ClearGhostHighlights();
+            EventManager.GameStateChanged(Enums.GameState.Preparing);
+            TowerState.Value = Enums.TowerOptions.Nothing.ToInt();
+
+        }
+
+        public void UpgradeTower()
+        {
+            bool playerHaveGold = _scene.CanIBuyThatTower(_towerModel.Gold * _towerModel.Level);
+            if (!playerHaveGold)
+            {
+                EventManager.NewNotificationHappened(Enums.NotificationType.NotEnoughGold);
+                return;
+            }
+            EventManager.PlayerDidSomething(Enums.PlayerActions.SpendGold, _towerModel.Gold * _towerModel.Level);
+            _pickedTower.Upgrade();
+            ClearGhost();
+        }
+        public void SetBindingData()
+        {
+            //BindingContextRegistry.Register(GetType().Name, this);
+        }
+
+        public void RegisterBindingContext()
+        {
+            BindingContextRegistry.Register(GetType().Name, this);
+        }
+
+        public void UnregisterBindingContext()
+        {
+            BindingContextRegistry.Unregister(GetType().Name, this);
         }
     }
 }

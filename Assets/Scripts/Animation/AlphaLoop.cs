@@ -64,6 +64,7 @@ namespace TowerDefense.Animation
             if (!IsAnimating) return;
             IsAnimating = false;
             _tween.Stop();
+            Tween.Alpha(_graphic, MaxAlpha, 0, 0, EaseType);
         }
 
         public void OnParentVisibilityChanged(bool isVisible)
