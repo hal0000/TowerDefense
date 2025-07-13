@@ -7,7 +7,7 @@ namespace TowerDefense.Core
     {
         public static float TimeScale { get; private set; } = 1f;
         public static float DeltaTime { get; private set; }
-        public static float UnscaledDeltaTime => Time.unscaledDeltaTime;
+        public static float ScaledDeltaTime => Time.deltaTime;
 
         private void Awake()
         {
@@ -16,7 +16,7 @@ namespace TowerDefense.Core
 
         private void Update()
         {
-            DeltaTime = UnscaledDeltaTime * TimeScale;
+            DeltaTime = ScaledDeltaTime * TimeScale;
         }
 
         private void OnDestroy()
