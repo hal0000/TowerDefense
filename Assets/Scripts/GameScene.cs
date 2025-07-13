@@ -87,6 +87,7 @@ namespace TowerDefense
         {
             _playerController.Restart();
             EventManager.GameStateChanged(Enums.GameState.Start);
+            GridManager.ResetGrid();
         }
 
         public void InitiateRound()

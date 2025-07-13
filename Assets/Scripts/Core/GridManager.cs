@@ -108,14 +108,16 @@ namespace TowerDefense.Core
             return _currentPathPositions;
         }
 
-        private void ResetGrid()
+        public void ResetGrid()
         {
+            HashSet<int> pathSet = new(ComputePath(Width, Height));
             for (int i = 0, len = _cells.Length; i < len; i++)
             {
                 CellController cv = _cells[i];
-                cv.Model.SetOccupied(false);
-                cv.Model.SetPath(false);
-                cv.ResetHighlight();
+                CellModel tempModel = cv.Model;
+                tempModel.SetOccupied(false);
+                tempModel.SetPath(pathSet.Contains(CoordPacker.Pack(tempModel.X, tempModel.Y)));
+                cv.Initialize(tempModel);
             }
         }
 
