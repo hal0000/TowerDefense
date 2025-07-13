@@ -31,9 +31,8 @@ namespace TowerDefense.Controller
                 // Precompute shifts
                 float halfShiftX = (cols - 1) * s * 0.5f;
                 float halfShiftZ = (rows - 1) * s * 0.5f;
-                float centerOffsetX = cols % 2 != 0 ? 0.5f : 0f;
-                float centerOffsetZ = rows % 2 != 0 ? 0.5f : 0f;
-
+                float centerOffsetX = (cols % 2 == 0) ? 0f : (cols == 1 ? -0.5f : 0.5f);
+                float centerOffsetZ = (rows % 2 == 0) ? 0f : (rows == 1 ? -0.5f : 0.5f);
                 for (int r = 0; r < rows; r++)
                 {
                     for (int c = 0; c < cols; c++)

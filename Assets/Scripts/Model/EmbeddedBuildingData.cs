@@ -59,17 +59,17 @@ namespace TowerDefense.Model
             ""FireRate"": 3
           },
           {
-            ""Index"": 4,
+            ""Index"": 5,
             ""Name"": ""Praktikum"",
             ""Gold"": 1000,
-            ""Footprint"": [ ""11"", ""11"", ""11"" ],
+            ""Footprint"": [ ""1"", ""1"", ""1"" ],
             ""Range"": 1,
             ""Damage"": 15,
             ""Level"": 1,
             ""FireRate"": 3
           },
           {
-            ""Index"": 5,
+            ""Index"": 6,
             ""Name"": ""Kundensupport"",
             ""Gold"": 10000,
             ""Footprint"": [ ""010"", ""111"", ""010"" ],
