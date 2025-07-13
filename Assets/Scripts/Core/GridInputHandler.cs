@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using TowerDefense.Controller;
 using TowerDefense.Interface;
@@ -36,6 +37,7 @@ namespace TowerDefense.Core
         public Bindable<int> TowerState  { get; } = new();
         public Bindable<int> TowerGold  { get; } = new();
         public Bindable<int> TowerUpgrade  { get; } = new();
+        private TowerController _pendingTower;
 
         public bool CanIMoveCamera => _hovering;
         private void Awake()
@@ -74,10 +76,9 @@ namespace TowerDefense.Core
                     if (_hitBuffer[0].collider.transform.parent.gameObject.TryGetComponent<TowerController>(out TowerController temp))
                         if (temp.CanIEdit)
                         {
+                            _pendingTower = temp;
+                            StartCoroutine(BeginMoveDelayed(temp));
                             EventManager.GameStateChanged(Enums.GameState.Editing);
-                            BeginMove(temp);
-                            temp.CanvasHandler(true);
-                            _hovering = true;
                             return;
                         }
             }
@@ -341,6 +342,24 @@ namespace TowerDefense.Core
             EventManager.PlayerDidSomething(Enums.PlayerActions.SpendGold, _towerModel.Gold * _towerModel.Level);
             _pickedTower.Upgrade();
             ClearGhost();
+        }
+        private IEnumerator BeginMoveDelayed(TowerController tower)
+        {
+            // wait a half‐second before actually picking it up
+            yield return new WaitForSeconds(0.15f);
+
+            // if the user cancelled in the meantime, cancel out
+            if (!_canEditTower || _pendingTower != tower)
+            {
+                _pendingTower = null;
+                yield break;
+            }
+
+            // now do the real begin‐move
+            BeginMove(tower);
+            tower.CanvasHandler(true);
+            _hovering = true;
+            _pendingTower = null;
         }
         public void SetBindingData()
         {
