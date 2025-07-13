@@ -66,13 +66,6 @@ namespace TowerDefense.Controller
 
         protected override void Tick()
         {
-            float dt = TimeManager.DeltaTime;
-            if (_cooldown > 0f)
-            {
-                _cooldown -= dt;
-                return;
-            }
-
             Vector3 detectCenter = transform.position;
             int count = Physics.OverlapSphereNonAlloc(detectCenter, _col.radius, _hitBuffer, _enemyLayer);
             if (count == 0) return;
@@ -87,8 +80,14 @@ namespace TowerDefense.Controller
             }
 
             if (target == null) return;
-            _barrel.LookAt(target.GetPosition(), Vector3.up);
-            _barrel.Rotate(-90f, 0f, 0f, Space.Self);
+            Vector3 dir = (target.GetPosition() - _barrel.position).normalized;
+            _barrel.rotation = Quaternion.FromToRotation(Vector3.up, dir);
+            float dt = TimeManager.DeltaTime;
+            if (_cooldown > 0f)
+            {
+                _cooldown -= dt;
+                return;
+            }
             BulletController bullet = _scene.BulletPool.GetBullet();
             bullet.Initialize(_firePoint, target, _damage, _bulletTravelTime);
             _cooldown = 1f / _fireRate;
