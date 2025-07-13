@@ -13,6 +13,19 @@ namespace TowerDefense.Model
         public int Damage;
         public int Health;
         public int Gold;
+
+        public EnemyModel() { }
+        public EnemyModel(EnemyModel other)
+        {
+            Type       = other.Type;
+            Name       = other.Name;
+            Speed      = other.Speed;
+            TurnRate   = other.TurnRate;
+            TurnRadius = other.TurnRadius;
+            Damage     = other.Damage;
+            Health     = other.Health;
+            Gold       = other.Gold;
+        }
     }
 
     [Serializable]

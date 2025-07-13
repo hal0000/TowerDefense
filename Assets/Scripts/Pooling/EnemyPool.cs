@@ -22,35 +22,31 @@ namespace TowerDefense.Pooling
 
             for (int m = 0; m < models.Count; m++)
             {
-                EnemyModel model = models[m];
-                _models[model.Type] = model;
+                EnemyModel proto = models[m];
+                _models[proto.Type] = proto;
 
                 EnemyTypeDefinition def = null;
                 for (int j = 0; j < EnemyTypeDefinitions.Count; j++)
                 {
-                    if (EnemyTypeDefinitions[j].Type == model.Type)
-                    {
-                        def = EnemyTypeDefinitions[j];
-                        break;
-                    }
+                    if (EnemyTypeDefinitions[j].Type != proto.Type) continue;
+                    def = EnemyTypeDefinitions[j];
+                    break;
                 }
+                if (def == null) throw new ArgumentOutOfRangeException($"No definition for {proto.Type}");
 
-                if (def == null)
-                    throw new ArgumentOutOfRangeException(nameof(model.Type));
-
-                Queue<BaseEnemyController> pool = new(def.PoolSize);
+                var pool = new Queue<BaseEnemyController>(def.PoolSize);
                 for (int i = 0; i < def.PoolSize; i++)
                 {
-                    BaseEnemyController e = Instantiate(def.Prefab, transform);
-                    e.gameObject.SetActive(false);
-                    e.Initialize(model, path);
-                    pool.Enqueue(e);
+                    var enemy = Instantiate(def.Prefab, transform);
+                    enemy.gameObject.SetActive(false);
+                    var instanceModel = new EnemyModel(proto); 
+                    enemy.Initialize(instanceModel, path);
+                    pool.Enqueue(enemy);
                 }
 
-                _enemyPools[model.Type] = pool;
+                _enemyPools[proto.Type] = pool;
             }
         }
-
         public BaseEnemyController GetEnemy(Enums.EnemyType type)
         {
             if (!_enemyPools.TryGetValue(type, out Queue<BaseEnemyController> pool)) return null;
@@ -73,6 +69,7 @@ namespace TowerDefense.Pooling
             if (def == null) return null;
 
             EnemyModel model = _models[type];
+            
             BaseEnemyController eNew = Instantiate(def.Prefab, transform);
             eNew.Initialize(model, _sharedPath);
             eNew.OnSpawn();
