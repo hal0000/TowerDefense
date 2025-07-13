@@ -55,8 +55,10 @@ namespace TowerDefense.Controller
             return transform.position;
         }
 
-        public void OnSpawn()
+        public virtual void OnSpawn()
         {
+            Model.Health = _maxHP;
+            UpdateHPBar(_maxHP, _maxHP);
             FlaggedForRecycle = false;
             if (WaypointIndex < 0 || WaypointIndex >= Waypoints.Count) WaypointIndex = 0;
             transform.position = Waypoints[0];
