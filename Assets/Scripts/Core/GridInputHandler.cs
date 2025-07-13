@@ -102,6 +102,15 @@ namespace TowerDefense.Core
         private void GameStateChanged(Enums.GameState type)
         {
             _canEditTower = type == Enums.GameState.Editing || type == Enums.GameState.Preparing;
+            if (type == Enums.GameState.Start)
+            {
+
+                int count = transform.childCount;
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    Destroy(transform.GetChild(i).gameObject);
+                }
+            }
         }
 
         private void BeginMove(TowerController tower)
@@ -123,7 +132,7 @@ namespace TowerDefense.Core
                 _ghostPrefab = prefab;
                 _towerModel = model;
                 if (_ghostInstance != null) DestroyImmediate(_ghostInstance.gameObject);
-                _ghostInstance = Instantiate(_ghostPrefab, prefab.transform.position, prefab.transform.rotation);
+                _ghostInstance = Instantiate(_ghostPrefab, prefab.transform.position, prefab.transform.rotation,transform);
                 if (_ghostInstance.TryGetComponent<TowerController>(out TowerController temp))
                 {
                     temp.Initialize(_towerModel);
@@ -151,7 +160,7 @@ namespace TowerDefense.Core
                 int centerPacked = CoordPacker.Pack(centerX, centerY);
 
                 Vector3 centerPos = _gridManager.GetCellCenter(centerPacked);
-                _ghostInstance = Instantiate(_ghostPrefab, centerPos, _ghostPrefab.transform.rotation);
+                _ghostInstance = Instantiate(_ghostPrefab, centerPos, _ghostPrefab.transform.rotation,transform);
                 if (_ghostInstance.TryGetComponent<TowerController>(out TowerController temp))
                 {
                     temp.Initialize(_towerModel);
@@ -254,7 +263,7 @@ namespace TowerDefense.Core
                     if (cv != null) cv.Model.SetOccupied(true);
                 }
             TowerState.Value = (int)Enums.TowerOptions.Nothing;
-            GameObject go = Instantiate(_ghostInstance, _ghostInstance.transform.position, _ghostInstance.transform.rotation);
+            GameObject go = Instantiate(_ghostInstance, _ghostInstance.transform.position, _ghostInstance.transform.rotation,transform);
             if (go.TryGetComponent<TowerController>(out TowerController temp))
             {
                 temp.OccupiedCells.Clear();
@@ -262,9 +271,9 @@ namespace TowerDefense.Core
                 temp.Initialize(_towerModel);
                 temp.Bauen(_footprintCells);
             }
-
+            if(_isEditing) Destroy(_pickedTower.gameObject);
             EventManager.PlayerDidSomething(Enums.PlayerActions.SpendGold, _isEditing ? 0 : _towerModel.Gold);
-            DestroyImmediate(_ghostInstance.gameObject);
+            Destroy(_ghostInstance.gameObject);
             _isEditing = _canCommit = _hovering = _startHover = false;
             ClearGhostHighlights();
             EventManager.GameStateChanged(Enums.GameState.Preparing);
