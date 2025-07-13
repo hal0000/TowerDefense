@@ -20,15 +20,13 @@ namespace TowerDefense.Controller
 
         public bool CanIEdit;
 
-        public void Bauen(List<int> positions)
+        public void Bauen()
         {
-            CanvasHandler(false);
             CanIEdit = true;
         }
 
         public void Abbrechen()
         {
-            CanvasHandler(false);
             Destroy(gameObject);
         }
 
@@ -57,12 +55,6 @@ namespace TowerDefense.Controller
 
         protected override void Tick()
         {
-        }
-
-        public void CanvasHandler(bool show)
-        {
-            WeaponController._col.enabled = !show;
-            //GridInputHandler.Instance.StartMove(this);
         }
     }
 }

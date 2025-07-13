@@ -8,5 +8,6 @@ namespace TowerDefense.Interface
         public void Die();
         public void Win();
         public Vector3 GetPosition();
+        public bool AmIAlive();
     }
 }

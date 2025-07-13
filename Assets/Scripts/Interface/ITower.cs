@@ -4,7 +4,7 @@ namespace TowerDefense.Interface
 {
     public interface ITower
     {
-        public void Bauen(List<int> positions);
+        public void Bauen();
         public void Abbrechen();
         public void Upgrade();
     }

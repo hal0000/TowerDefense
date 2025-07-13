@@ -44,7 +44,7 @@ namespace TowerDefense.Controller
 
         public void GetDamage(int value)
         {
-            Model.Health -= value;
+            Model.Health = Mathf.Max(Model.Health - value, 0);
             UpdateHPBar(Model.Health, _maxHP);
             if (Model.Health <= 0 && !FlaggedForRecycle)
                 Die();
@@ -54,6 +54,8 @@ namespace TowerDefense.Controller
         {
             return transform.position;
         }
+
+        public bool AmIAlive() => !FlaggedForRecycle;
 
         public virtual void OnSpawn()
         {
@@ -144,10 +146,9 @@ namespace TowerDefense.Controller
             float progress = Mathf.Clamp01(currentHP / maxHP);
             // Calculate target width based on normalized HP
             float targetWidth = MaxHPBarWidth * progress;
-
             // Get the current size of the HP bar
             Vector2 currentSize = HpBarRect.sizeDelta;
-
+            if (Mathf.Approximately(currentSize.x, targetWidth)) return;
             // Animate the size change using PrimeTween (duration is set to 0.5 seconds, adjust as needed)
             Tween.UISizeDelta(HpBarRect, new Vector2(targetWidth, currentSize.y), 0.2f, Ease.OutSine);
         }

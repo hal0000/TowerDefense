@@ -17,14 +17,14 @@ namespace TowerDefense.Model
         public EnemyModel() { }
         public EnemyModel(EnemyModel other)
         {
-            Type       = other.Type;
-            Name       = other.Name;
-            Speed      = other.Speed;
-            TurnRate   = other.TurnRate;
+            Type = other.Type;
+            Name = other.Name;
+            Speed = other.Speed;
+            TurnRate = other.TurnRate;
             TurnRadius = other.TurnRadius;
-            Damage     = other.Damage;
-            Health     = other.Health;
-            Gold       = other.Gold;
+            Damage = other.Damage;
+            Health = other.Health;
+            Gold = other.Gold;
         }
     }
 

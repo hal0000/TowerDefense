@@ -67,7 +67,7 @@ namespace TowerDefense.Core
 
             // ignore if over any UI
             if (EventSystem.current.IsPointerOverGameObject(t0.touchId)) return;
-            // build a ray from camera → touch point
+            // build a ray from camera touch point
             Ray ray = _cam.ScreenPointToRay(screenPos);
             if (!CanIMoveCamera)
             {
@@ -149,7 +149,6 @@ namespace TowerDefense.Core
                 if (_ghostInstance.TryGetComponent(out TowerController temp))
                 {
                     temp.Initialize(_towerModel);
-                    temp.CanvasHandler(true);
                     _ghostInstance.SetActive(true);
                 }
 
@@ -177,7 +176,6 @@ namespace TowerDefense.Core
                 if (_ghostInstance.TryGetComponent(out TowerController temp))
                 {
                     temp.Initialize(_towerModel);
-                    temp.CanvasHandler(true);
                 }
 
                 _ghostInstance.GetComponent<TowerController>().Initialize(_towerModel);
@@ -285,7 +283,7 @@ namespace TowerDefense.Core
                 temp.OccupiedCells.Clear();
                 temp.OccupiedCells.AddRange(_footprintCells);
                 temp.Initialize(_towerModel);
-                temp.Bauen(_footprintCells);
+                temp.Bauen();
             }
 
             if (_isEditing) Destroy(_pickedTower.gameObject);
@@ -311,7 +309,6 @@ namespace TowerDefense.Core
                 }
 
                 _pickedTower.gameObject.SetActive(true);
-                _pickedTower.CanvasHandler(false);
                 _canCommit = false;
                 _pickedTower = null;
             }
@@ -374,7 +371,6 @@ namespace TowerDefense.Core
 
         private IEnumerator BeginMoveDelayed(TowerController tower)
         {
-            // wait a half‐second before actually picking it up
             yield return new WaitForSeconds(0.15f);
 
             // if the user cancelled in the meantime, cancel out
@@ -386,7 +382,6 @@ namespace TowerDefense.Core
 
             // now do the real begin‐move
             BeginMove(tower);
-            tower.CanvasHandler(true);
             CanIMoveCamera = true;
             _pendingTower = null;
         }
