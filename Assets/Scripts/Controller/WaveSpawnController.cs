@@ -69,14 +69,18 @@ namespace TowerDefense.Controller
             _activeEnemyCount = 0;
             foreach (var spawn in wave.Enemy)
                 _activeEnemyCount += spawn.Count;
-            for (int i = 0; i < count; i++)
+            foreach (var spawn in wave.Enemy)
             {
-                SpawnModel enemy = tempList[i];
-                int enemyCount = enemy.Count;
-                for (int j = 0; j < enemyCount; j++)
+                for (int i = 0; i < spawn.Count; i++)
                 {
-                    _enemyPool.GetEnemy(enemy.EnemyType);
-                    yield return new WaitForSeconds(interval);
+                    _enemyPool.GetEnemy(spawn.EnemyType);
+
+                    float elapsed = 0f;
+                    while (elapsed < interval)
+                    {
+                        elapsed += TimeManager.DeltaTime;
+                        yield return null;
+                    }
                 }
             }
         }
