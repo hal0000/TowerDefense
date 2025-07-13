@@ -3,6 +3,7 @@
 // All rights reserved.
 // --------------------------------------------------------------------------------------------------------------------
 
+using PrimeTween;
 using TowerDefense.Network;
 using UnityEngine;
 using UnityEngine.InputSystem.EnhancedTouch;
@@ -41,6 +42,7 @@ namespace TowerDefense.Core
                 Api = new Api();
                 EnhancedTouchSupport.Enable();
                 TouchSimulation.Enable();
+                PrimeTweenConfig.warnZeroDuration = false;
             }
         }
     }
