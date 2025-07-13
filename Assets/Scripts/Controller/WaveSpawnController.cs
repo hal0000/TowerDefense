@@ -52,7 +52,7 @@ namespace TowerDefense.Controller
         {
             if (_currentWaveIndex >= _waveConfig.Waves.Count)
             {
-                EventManager.GameStateChanged(Enums.GameState.GameOver);
+                EventManager.GameStateChanged(Enums.GameState.EndGame);
                 return;
             }
 
