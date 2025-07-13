@@ -7,11 +7,13 @@ namespace TowerDefense.Controller
     public class FlyingEnemyController : BaseEnemyController
     {
         [SerializeField] private float FlightHeight = 2f;
+        private int _totalWayCounts;
 
         public override void Initialize(EnemyModel model, IReadOnlyList<Vector3> waypoints)
         {
             base.Initialize(model, waypoints);
-            WaypointIndex = waypoints.Count - 1;
+            _totalWayCounts = waypoints.Count - 1;
+            WaypointIndex = _totalWayCounts;
         }
 
         protected override bool GetCurrentTarget(out Vector3 target)
@@ -34,6 +36,12 @@ namespace TowerDefense.Controller
         protected override float GetMaintainY()
         {
             return FlightHeight;
+        }
+
+        public override void OnSpawn()
+        {
+            base.OnSpawn();
+            WaypointIndex = _totalWayCounts;
         }
     }
 }
