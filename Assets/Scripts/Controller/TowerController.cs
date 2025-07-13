@@ -3,7 +3,6 @@ using TowerDefense.Core;
 using TowerDefense.Interface;
 using TowerDefense.Model;
 using TowerDefense.UI.Binding;
-using UnityEngine;
 
 namespace TowerDefense.Controller
 {
@@ -20,7 +19,7 @@ namespace TowerDefense.Controller
         public List<int> OccupiedCells = new();
 
         public bool CanIEdit;
-        
+
         public void Bauen(List<int> positions)
         {
             CanvasHandler(false);
@@ -31,6 +30,14 @@ namespace TowerDefense.Controller
         {
             CanvasHandler(false);
             Destroy(gameObject);
+        }
+
+        public void Upgrade()
+        {
+            Model.Level++;
+            Model.Range += 1;
+            Model.Damage += 5;
+            WeaponController.Initialize(Model);
         }
 
         /// <summary>
@@ -45,7 +52,7 @@ namespace TowerDefense.Controller
         {
             Model = model;
             TowerState.Value = 0;
-            WeaponController.Initialize(model); 
+            WeaponController.Initialize(model);
         }
 
         protected override void Tick()
@@ -56,14 +63,6 @@ namespace TowerDefense.Controller
         {
             WeaponController._col.enabled = !show;
             //GridInputHandler.Instance.StartMove(this);
-        }
-
-        public void Upgrade()
-        {
-            Model.Level++;
-            Model.Range += 1;
-            Model.Damage += 5;
-            WeaponController.Initialize(Model);
         }
     }
 }

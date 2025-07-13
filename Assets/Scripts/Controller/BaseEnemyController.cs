@@ -1,5 +1,3 @@
-// BaseEnemyController.cs
-using System;
 using System.Collections.Generic;
 using PrimeTween;
 using TowerDefense.Core;
@@ -12,21 +10,56 @@ namespace TowerDefense.Controller
 {
     public abstract class BaseEnemyController : MonoBehaviourExtra, IEnemy, IPoolable
     {
+        private static EnemyPool _enemyPool;
         public RectTransform HpBarRect;
         public float MaxHPBarWidth = 2f;
         public Transform Mesh;
-        
-        private static EnemyPool _enemyPool;
+        private int _maxHP;
+        protected bool FlaggedForRecycle;
+        protected int WaypointIndex;
         protected EnemyModel Model { get; private set; }
         protected IReadOnlyList<Vector3> Waypoints { get; private set; }
-        protected int WaypointIndex;
-        protected bool FlaggedForRecycle;
-        private int _maxHP;
 
-        void Awake()
+        private void Awake()
         {
             if (_enemyPool == null && GameManager.Instance.CurrentScene is GameScene gs)
                 _enemyPool = gs.EnemyPool;
+        }
+
+        public void Win()
+        {
+            if (FlaggedForRecycle) return;
+            FlaggedForRecycle = true;
+            EventManager.PlayerDidSomething(Enums.PlayerActions.GetDamage, Model.Damage);
+            _enemyPool.ReturnEnemy(Model.Type, this);
+        }
+
+        public void Die()
+        {
+            if (FlaggedForRecycle) return;
+            FlaggedForRecycle = true;
+            EventManager.PlayerDidSomething(Enums.PlayerActions.EnemyKilled, Model.Gold);
+            _enemyPool.ReturnEnemy(Model.Type, this);
+        }
+
+        public void GetDamage(int value)
+        {
+            Model.Health -= value;
+            UpdateHPBar(Model.Health, _maxHP);
+            if (Model.Health <= 0 && !FlaggedForRecycle)
+                Die();
+        }
+
+        public Vector3 GetPosition()
+        {
+            return transform.position;
+        }
+
+        public void OnSpawn()
+        {
+            FlaggedForRecycle = false;
+            if (WaypointIndex < 0 || WaypointIndex >= Waypoints.Count) WaypointIndex = 0;
+            transform.position = Waypoints[0];
         }
 
         public virtual void Initialize(EnemyModel model, IReadOnlyList<Vector3> waypoints)
@@ -34,13 +67,6 @@ namespace TowerDefense.Controller
             Model = model;
             Waypoints = waypoints;
             _maxHP = model.Health;
-        }
-        
-        public void OnSpawn()
-        {
-            FlaggedForRecycle = false;
-            if (WaypointIndex < 0 || WaypointIndex >= Waypoints.Count) WaypointIndex = 0;
-            transform.position = Waypoints[0];
         }
 
         protected override void Tick()
@@ -52,17 +78,15 @@ namespace TowerDefense.Controller
                 Win();
                 return;
             }
+
             bool arrived = StepTowards(target, GetMaintainY());
-            if (arrived)
-            {
-                OnArrived();
-            }
+            if (arrived) OnArrived();
         }
 
         /// <summary>
-        /// Moves toward to target by Model.Speed * t. Returns true if we've reached/past it this frame.
+        ///     Moves toward to target by Model.Speed * t. Returns true if we've reached/past it this frame.
         /// </summary>
-        bool StepTowards(Vector3 target, float maintainY)
+        private bool StepTowards(Vector3 target, float maintainY)
         {
             // Clamp both ends to the desired Y
             target.y = maintainY;
@@ -97,48 +121,22 @@ namespace TowerDefense.Controller
             return false;
         }
 
-        public void Win()
-        {
-            if (FlaggedForRecycle) return;
-            FlaggedForRecycle = true;
-            EventManager.PlayerDidSomething(Enums.PlayerActions.GetDamage, Model.Damage);
-            _enemyPool.ReturnEnemy(Model.Type, this);
-        }
-
-        public void Die()
-        {
-            if (FlaggedForRecycle) return;
-            FlaggedForRecycle = true;
-            EventManager.PlayerDidSomething(Enums.PlayerActions.EnemyKilled, Model.Gold);
-            _enemyPool.ReturnEnemy(Model.Type, this);
-        }
-
-        public void GetDamage(int value)
-        {
-            Model.Health -= value;
-            UpdateHPBar(Model.Health, _maxHP);
-            if (Model.Health <= 0 && !FlaggedForRecycle)
-                Die();
-        }
-
-        public Vector3 GetPosition() => transform.position;
-        
         /// <summary>
-        /// Return the current target; if out of waypoints, return false.
+        ///     Return the current target; if out of waypoints, return false.
         /// </summary>
         protected abstract bool GetCurrentTarget(out Vector3 target);
 
         /// <summary>
-        /// Called after StepTowards returned true: bump waypoint index or finish.
+        ///     Called after StepTowards returned true: bump waypoint index or finish.
         /// </summary>
         protected abstract void OnArrived();
 
         /// <summary>
-        /// What altitude should we fly/stand at?
+        ///     What altitude should we fly/stand at?
         /// </summary>
         protected abstract float GetMaintainY();
-        
-        void UpdateHPBar(float currentHP, float maxHP)
+
+        private void UpdateHPBar(float currentHP, float maxHP)
         {
             if (FlaggedForRecycle) return;
             float progress = Mathf.Clamp01(currentHP / maxHP);

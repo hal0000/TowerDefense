@@ -38,7 +38,7 @@ namespace TowerDefense.Pooling
                 if (def == null)
                     throw new ArgumentOutOfRangeException(nameof(model.Type));
 
-                Queue<BaseEnemyController> pool = new Queue<BaseEnemyController>(def.PoolSize);
+                Queue<BaseEnemyController> pool = new(def.PoolSize);
                 for (int i = 0; i < def.PoolSize; i++)
                 {
                     BaseEnemyController e = Instantiate(def.Prefab, transform);

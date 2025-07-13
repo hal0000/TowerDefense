@@ -269,7 +269,7 @@ namespace TowerDefense.UI.Binding
                 if (currentType.IsGenericType && currentType.GetGenericTypeDefinition() == typeof(Bindable<>))
                 {
                     // Create binding info
-                    BindingInfo bindingInfo = new BindingInfo(
+                    BindingInfo bindingInfo = new(
                         currentObject,
                         currentType.GetProperty("Value"),
                         () => currentObject,

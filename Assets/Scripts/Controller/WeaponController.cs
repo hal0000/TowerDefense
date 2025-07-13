@@ -1,4 +1,3 @@
-using System;
 using TowerDefense.Animation;
 using TowerDefense.Core;
 using TowerDefense.Interface;
@@ -13,24 +12,43 @@ namespace TowerDefense.Controller
 
         [Header("Fire Settings")] [SerializeField]
         private Transform _firePoint;
+
         [SerializeField] private int _maxTargets = 2;
         [SerializeField] private float _bulletTravelTime = 0.2f;
         [SerializeField] private Transform _barrel;
-         public SphereCollider _col;
+        public SphereCollider _col;
         [SerializeField] private LayerMask _enemyLayer = ~0;
         [SerializeField] private AlphaLoop _rangeIndicator;
-
-        int _damage = 1;
-        private float _range = 5f;
         private float _cooldown;
-        float _fireRate = 1f;
+
+        private int _damage = 1;
+        private float _fireRate = 1f;
         private Collider[] _hitBuffer;
-        
+        private float _range = 5f;
+
         private void Awake()
         {
             if (_scene == null && GameManager.Instance.CurrentScene is GameScene gs) _scene = gs;
             _hitBuffer = new Collider[_maxTargets];
         }
+
+        protected override void OnEnable()
+        {
+            EventManager.OnGameStateChanged += GameStateChanged;
+        }
+
+        protected override void OnDisable()
+        {
+            EventManager.OnGameStateChanged -= GameStateChanged;
+        }
+#if UNITY_EDITOR
+        private void OnDrawGizmosSelected()
+        {
+            if (_firePoint == null) return;
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(transform.position, _col.radius);
+        }
+#endif
 
         public void Initialize(TowerModel model)
         {
@@ -40,6 +58,7 @@ namespace TowerDefense.Controller
             _col.radius = _range;
             _rangeIndicator.transform.localScale = new Vector3(_range, _range, 1);
         }
+
         private void GameStateChanged(Enums.GameState type)
         {
             switch (type)
@@ -55,14 +74,6 @@ namespace TowerDefense.Controller
                     break;
             }
         }
-#if UNITY_EDITOR
-        private void OnDrawGizmosSelected()
-        {
-            if (_firePoint == null) return;
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(transform.position, _col.radius);
-        }
-#endif
 
         protected override void Tick()
         {
@@ -74,7 +85,7 @@ namespace TowerDefense.Controller
             {
                 Collider col = _hitBuffer[i];
                 if (col == null) continue;
-                if (!col.TryGetComponent<IEnemy>(out IEnemy ie)) continue;
+                if (!col.TryGetComponent(out IEnemy ie)) continue;
                 target = ie;
                 break;
             }
@@ -88,17 +99,10 @@ namespace TowerDefense.Controller
                 _cooldown -= dt;
                 return;
             }
+
             BulletController bullet = _scene.BulletPool.GetBullet();
             bullet.Initialize(_firePoint, target, _damage, _bulletTravelTime);
             _cooldown = 1f / _fireRate;
-        }
-        protected override void OnEnable() 
-        {
-            EventManager.OnGameStateChanged += GameStateChanged;
-        }
-        protected override void OnDisable()
-        { 
-            EventManager.OnGameStateChanged -= GameStateChanged;
         }
     }
 }

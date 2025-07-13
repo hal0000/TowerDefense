@@ -7,6 +7,5 @@ namespace TowerDefense.Interface
         public void Bauen(List<int> positions);
         public void Abbrechen();
         public void Upgrade();
-
     }
 }

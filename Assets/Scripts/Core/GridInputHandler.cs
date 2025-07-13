@@ -27,19 +27,19 @@ namespace TowerDefense.Core
         private GameObject _ghostPrefab;
 
         private GridManager _gridManager;
-        private bool _hovering;
         private bool _isEditing;
+        private TowerController _pendingTower;
         private TowerController _pickedTower;
         private GameScene _scene;
         private bool _startHover;
         private TowerModel _towerModel;
 
-        public Bindable<int> TowerState  { get; } = new();
-        public Bindable<int> TowerGold  { get; } = new();
-        public Bindable<int> TowerUpgrade  { get; } = new();
-        private TowerController _pendingTower;
+        public Bindable<int> TowerState { get; } = new();
+        public Bindable<int> TowerGold { get; } = new();
+        public Bindable<int> TowerUpgrade { get; } = new();
 
-        public bool CanIMoveCamera => _hovering;
+        public bool CanIMoveCamera { get; private set; }
+
         private void Awake()
         {
             RegisterBindingContext();
@@ -69,11 +69,11 @@ namespace TowerDefense.Core
             if (EventSystem.current.IsPointerOverGameObject(t0.touchId)) return;
             // build a ray from camera → touch point
             Ray ray = _cam.ScreenPointToRay(screenPos);
-            if (!_hovering)
+            if (!CanIMoveCamera)
             {
                 int towerHits = Physics.RaycastNonAlloc(ray, _hitBuffer, Mathf.Infinity, _towerLayer);
                 if (towerHits > 0)
-                    if (_hitBuffer[0].collider.transform.parent.gameObject.TryGetComponent<TowerController>(out TowerController temp))
+                    if (_hitBuffer[0].collider.transform.parent.gameObject.TryGetComponent(out TowerController temp))
                         if (temp.CanIEdit)
                         {
                             _pendingTower = temp;
@@ -82,15 +82,14 @@ namespace TowerDefense.Core
                             return;
                         }
             }
+
             if (!_startHover) return;
             int groundHits = Physics.RaycastNonAlloc(ray, _hitBuffer, Mathf.Infinity, _groundLayer);
             if (groundHits == 0) return;
             Vector3 hitPoint = _hitBuffer[0].point;
-            if (_gridManager.WorldToPackedCoord(hitPoint, out int packed))
-            {
-                _hovering = true;
-                HandleGhostDrag(packed);
-            }
+            if (!_gridManager.WorldToPackedCoord(hitPoint, out int packed)) return;
+            CanIMoveCamera = true;
+            HandleGhostDrag(packed);
         }
 
         private void OnDestroy()
@@ -99,12 +98,26 @@ namespace TowerDefense.Core
             UnregisterBindingContext();
         }
 
+        public void SetBindingData()
+        {
+            //BindingContextRegistry.Register(GetType().Name, this);
+        }
+
+        public void RegisterBindingContext()
+        {
+            BindingContextRegistry.Register(GetType().Name, this);
+        }
+
+        public void UnregisterBindingContext()
+        {
+            BindingContextRegistry.Unregister(GetType().Name, this);
+        }
+
         private void GameStateChanged(Enums.GameState type)
         {
             _canEditTower = type == Enums.GameState.Editing || type == Enums.GameState.Preparing;
             if (type == Enums.GameState.Start)
             {
-
                 int count = transform.childCount;
                 for (int i = count - 1; i >= 0; i--)
                 {
@@ -124,7 +137,7 @@ namespace TowerDefense.Core
 
         public void StartHover(GameObject prefab, TowerModel model, bool isEdit = false)
         {
-            if (_hovering) return;
+            if (CanIMoveCamera) return;
             if (isEdit)
             {
                 _isEditing = true;
@@ -132,8 +145,8 @@ namespace TowerDefense.Core
                 _ghostPrefab = prefab;
                 _towerModel = model;
                 if (_ghostInstance != null) DestroyImmediate(_ghostInstance.gameObject);
-                _ghostInstance = Instantiate(_ghostPrefab, prefab.transform.position, prefab.transform.rotation,transform);
-                if (_ghostInstance.TryGetComponent<TowerController>(out TowerController temp))
+                _ghostInstance = Instantiate(_ghostPrefab, prefab.transform.position, prefab.transform.rotation, transform);
+                if (_ghostInstance.TryGetComponent(out TowerController temp))
                 {
                     temp.Initialize(_towerModel);
                     temp.CanvasHandler(true);
@@ -160,12 +173,13 @@ namespace TowerDefense.Core
                 int centerPacked = CoordPacker.Pack(centerX, centerY);
 
                 Vector3 centerPos = _gridManager.GetCellCenter(centerPacked);
-                _ghostInstance = Instantiate(_ghostPrefab, centerPos, _ghostPrefab.transform.rotation,transform);
-                if (_ghostInstance.TryGetComponent<TowerController>(out TowerController temp))
+                _ghostInstance = Instantiate(_ghostPrefab, centerPos, _ghostPrefab.transform.rotation, transform);
+                if (_ghostInstance.TryGetComponent(out TowerController temp))
                 {
                     temp.Initialize(_towerModel);
                     temp.CanvasHandler(true);
                 }
+
                 _ghostInstance.GetComponent<TowerController>().Initialize(_towerModel);
                 _footprintCells.Clear();
                 int rows = _towerModel.Rows, cols = _towerModel.Cols;
@@ -199,7 +213,7 @@ namespace TowerDefense.Core
                 TowerState.Value = (int)Enums.TowerOptions.NewTower;
             }
 
-            _hovering = _startHover = true;
+            CanIMoveCamera = _startHover = true;
         }
 
         private void HandleGhostDrag(int packed)
@@ -235,6 +249,7 @@ namespace TowerDefense.Core
                 if (cv != null) cv.Highlight(_canCommit);
                 _lastHighlighted.Add(p);
             }
+
             _canCommit = isValid;
         }
 
@@ -255,26 +270,28 @@ namespace TowerDefense.Core
                 EventManager.NewNotificationHappened(Enums.NotificationType.NotEnoughGold);
                 return;
             }
-            
+
             if (!_isEditing)
                 foreach (int p in _footprintCells)
                 {
                     CellController cv = _gridManager.GetCellView(p);
                     if (cv != null) cv.Model.SetOccupied(true);
                 }
+
             TowerState.Value = (int)Enums.TowerOptions.Nothing;
-            GameObject go = Instantiate(_ghostInstance, _ghostInstance.transform.position, _ghostInstance.transform.rotation,transform);
-            if (go.TryGetComponent<TowerController>(out TowerController temp))
+            GameObject go = Instantiate(_ghostInstance, _ghostInstance.transform.position, _ghostInstance.transform.rotation, transform);
+            if (go.TryGetComponent(out TowerController temp))
             {
                 temp.OccupiedCells.Clear();
                 temp.OccupiedCells.AddRange(_footprintCells);
                 temp.Initialize(_towerModel);
                 temp.Bauen(_footprintCells);
             }
-            if(_isEditing) Destroy(_pickedTower.gameObject);
+
+            if (_isEditing) Destroy(_pickedTower.gameObject);
             EventManager.PlayerDidSomething(Enums.PlayerActions.SpendGold, _isEditing ? 0 : _towerModel.Gold);
             Destroy(_ghostInstance.gameObject);
-            _isEditing = _canCommit = _hovering = _startHover = false;
+            _isEditing = _canCommit = CanIMoveCamera = _startHover = false;
             ClearGhostHighlights();
             EventManager.GameStateChanged(Enums.GameState.Preparing);
         }
@@ -299,7 +316,7 @@ namespace TowerDefense.Core
                 _pickedTower = null;
             }
 
-            _isEditing = _hovering = _startHover = false;
+            _isEditing = CanIMoveCamera = _startHover = false;
             if (_ghostInstance != null) DestroyImmediate(_ghostInstance.gameObject);
             ClearGhostHighlights();
             EventManager.GameStateChanged(Enums.GameState.Preparing);
@@ -328,16 +345,17 @@ namespace TowerDefense.Core
                     CellController cv = _gridManager.GetCellView(p);
                     if (cv != null) cv.Model.SetOccupied(false);
                 }
+
                 Destroy(_pickedTower.gameObject);
                 _canCommit = false;
                 _pickedTower = null;
             }
-            _isEditing = _hovering = _startHover = false;
+
+            _isEditing = CanIMoveCamera = _startHover = false;
             if (_ghostInstance != null) DestroyImmediate(_ghostInstance.gameObject);
             ClearGhostHighlights();
             EventManager.GameStateChanged(Enums.GameState.Preparing);
             TowerState.Value = Enums.TowerOptions.Nothing.ToInt();
-
         }
 
         public void UpgradeTower()
@@ -348,10 +366,12 @@ namespace TowerDefense.Core
                 EventManager.NewNotificationHappened(Enums.NotificationType.NotEnoughGold);
                 return;
             }
+
             EventManager.PlayerDidSomething(Enums.PlayerActions.SpendGold, _towerModel.Gold * _towerModel.Level);
             _pickedTower.Upgrade();
             ClearGhost();
         }
+
         private IEnumerator BeginMoveDelayed(TowerController tower)
         {
             // wait a half‐second before actually picking it up
@@ -367,22 +387,8 @@ namespace TowerDefense.Core
             // now do the real begin‐move
             BeginMove(tower);
             tower.CanvasHandler(true);
-            _hovering = true;
+            CanIMoveCamera = true;
             _pendingTower = null;
-        }
-        public void SetBindingData()
-        {
-            //BindingContextRegistry.Register(GetType().Name, this);
-        }
-
-        public void RegisterBindingContext()
-        {
-            BindingContextRegistry.Register(GetType().Name, this);
-        }
-
-        public void UnregisterBindingContext()
-        {
-            BindingContextRegistry.Unregister(GetType().Name, this);
         }
     }
 }

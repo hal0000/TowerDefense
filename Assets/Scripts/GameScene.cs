@@ -55,7 +55,7 @@ namespace TowerDefense
             UnregisterBindingContext();
         }
 
-        void GameStateChanged(Enums.GameState newState)
+        private void GameStateChanged(Enums.GameState newState)
         {
             switch (newState)
             {
@@ -88,21 +88,23 @@ namespace TowerDefense
             _playerController.Restart();
             EventManager.GameStateChanged(Enums.GameState.Start);
         }
+
         public void InitiateRound()
         {
             EventManager.GameStateChanged(Enums.GameState.Playing);
         }
+
         /// <summary>
         ///     API MOCKUP CALL
         /// </summary>
-        void GetTowerList()
+        private void GetTowerList()
         {
             List<TowerModel> models = GameManager.Instance.Api.GetBuildingTypes();
             TowerPrefabGenerator.GenerateTowerPrefabs(models);
             TowerModels.Value = models;
         }
 
-        void SetTowerButtonUI()
+        private void SetTowerButtonUI()
         {
             IList<TowerModel> models = TowerModels.Value;
             float x = 0f;
@@ -123,7 +125,7 @@ namespace TowerDefense
                 btnRT.anchoredPosition = new Vector2(x, 0f);
 
                 // initialize your button logic
-                if (btnRT.TryGetComponent<TowerButton>(out TowerButton tb)) tb.Init(models[i], i);
+                if (btnRT.TryGetComponent(out TowerButton tb)) tb.Init(models[i], i);
                 else LoggerExtra.LogError("TowerButton component missing!");
 
                 btnRT.gameObject.SetActive(true);

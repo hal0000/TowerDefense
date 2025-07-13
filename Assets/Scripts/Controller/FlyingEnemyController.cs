@@ -21,6 +21,7 @@ namespace TowerDefense.Controller
                 target = default;
                 return false;
             }
+
             target = Waypoints[WaypointIndex];
             return true;
         }
@@ -30,6 +31,9 @@ namespace TowerDefense.Controller
             WaypointIndex = -1;
         }
 
-        protected override float GetMaintainY() => FlightHeight;
+        protected override float GetMaintainY()
+        {
+            return FlightHeight;
+        }
     }
 }

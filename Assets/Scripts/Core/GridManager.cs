@@ -27,8 +27,8 @@ namespace TowerDefense.Core
         /// </summary>
         private List<int> ComputePath(int w, int h)
         {
-            List<int> fullPath = new List<int>();
-            List<int> corners = new List<int>();
+            List<int> fullPath = new();
+            List<int> corners = new();
 
             int x = 0, y = 0, tx = w - 1, ty = h - 1;
             fullPath.Add(CoordPacker.Pack(x, y));
@@ -46,7 +46,7 @@ namespace TowerDefense.Core
                 fullPath.Add(packed);
 
                 // detecting direction change for finding curve/corner
-                Vector2Int dir = new Vector2Int(x - prevX, y - prevY);
+                Vector2Int dir = new(x - prevX, y - prevY);
                 if (lastDir != Vector2Int.zero && dir != lastDir)
                     // record the _previous_ cell as a corner
                     corners.Add(CoordPacker.Pack(prevX, prevY));
@@ -83,7 +83,7 @@ namespace TowerDefense.Core
             Height = h;
             _cells = new CellController[w * h];
 
-            HashSet<int> pathSet = new HashSet<int>(ComputePath(w, h));
+            HashSet<int> pathSet = new(ComputePath(w, h));
             Quaternion rot = CellPrefab.gameObject.transform.rotation;
 
             for (int x = 0; x < w; x++)
@@ -98,7 +98,7 @@ namespace TowerDefense.Core
 #if UNITY_EDITOR
                     go.name = $"Cell_{x}_{y}";
 #endif
-                    CellModel cm = new CellModel(go.name, x, y);
+                    CellModel cm = new(go.name, x, y);
                     if (pathSet.Contains(packed)) cm.SetPath(true);
                     go.Initialize(cm);
                     _cells[index] = go;

@@ -1,9 +1,9 @@
 namespace TowerDefense.Model
 {
-  /// <summary>
-  ///     embedded data for mockup api call simulation
-  /// </summary>
-  public static class EmbeddedBuildingData
+    /// <summary>
+    ///     embedded data for mockup api call simulation
+    /// </summary>
+    public static class EmbeddedBuildingData
     {
         public const string TowerJson = @"
       {

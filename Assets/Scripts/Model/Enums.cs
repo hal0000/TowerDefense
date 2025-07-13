@@ -25,12 +25,7 @@ namespace TowerDefense.Model
             NotEnoughGold,
             TowerPositionIsNotValid
         }
-        public enum TowerOptions
-        {
-            Nothing = 0,
-            NewTower = 1,
-            OldTower = 2
-        }
+
         public enum PlayerActions
         {
             GetDamage,
@@ -38,6 +33,13 @@ namespace TowerDefense.Model
             EnemyKilled,
             NewLevel,
             GameOver
+        }
+
+        public enum TowerOptions
+        {
+            Nothing = 0,
+            NewTower = 1,
+            OldTower = 2
         }
     }
 }

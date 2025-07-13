@@ -17,6 +17,8 @@ namespace TowerDefense.Controller
         private int _currentWaveIndex;
         private EnemyPool _enemyPool;
 
+        private Enums.GameState _lastState;
+
         private void Awake()
         {
             EventManager.OnGameStateChanged += OnGameStateChanged;
@@ -38,10 +40,10 @@ namespace TowerDefense.Controller
                     _activeEnemyCount--;
                     break;
             }
+
             if (_activeEnemyCount == 0 && _lastState == Enums.GameState.Playing) EventManager.GameStateChanged(Enums.GameState.Preparing);
         }
 
-        private Enums.GameState _lastState;
         private void OnGameStateChanged(Enums.GameState state)
         {
             _lastState = state;
@@ -67,10 +69,9 @@ namespace TowerDefense.Controller
             List<SpawnModel> tempList = wave.Enemy;
             int count = tempList.Count;
             _activeEnemyCount = 0;
-            foreach (var spawn in wave.Enemy)
+            foreach (SpawnModel spawn in wave.Enemy)
                 _activeEnemyCount += spawn.Count;
-            foreach (var spawn in wave.Enemy)
-            {
+            foreach (SpawnModel spawn in wave.Enemy)
                 for (int i = 0; i < spawn.Count; i++)
                 {
                     _enemyPool.GetEnemy(spawn.EnemyType);
@@ -82,7 +83,6 @@ namespace TowerDefense.Controller
                         yield return null;
                     }
                 }
-            }
         }
     }
 }
