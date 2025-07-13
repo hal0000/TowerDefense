@@ -45,6 +45,7 @@ namespace TowerDefense
             GetTowerList();
             SetTowerButtonUI();
             EventManager.GameStateChanged(Enums.GameState.Start);
+            GridManager.BuildGrid(32, 32);
         }
 
         public override void OnDestroy()
@@ -78,7 +79,6 @@ namespace TowerDefense
 
         public void StartGame()
         {
-            GridManager.BuildGrid(30, 30);
             EventManager.GameStateChanged(Enums.GameState.Preparing);
             GetEnemyList();
         }

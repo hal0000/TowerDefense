@@ -60,32 +60,32 @@ namespace TowerDefense.Controller
         }
 
         /// <summary>
-        /// Moves toward to target by Model.Speed * t.  Returns true if we've reached/past it this frame.
+        /// Moves toward to target by Model.Speed * t. Returns true if we've reached/past it this frame.
         /// </summary>
         bool StepTowards(Vector3 target, float maintainY)
         {
             // Clamp both ends to the desired Y
             target.y = maintainY;
             Vector3 start = transform.position;
-            start.y  = maintainY;
+            start.y = maintainY;
 
             // Compute horizontal delta only
             Vector3 delta = target - start;
-            float   sqrMag = delta.sqrMagnitude;
+            float sqrMag = delta.sqrMagnitude;
             if (sqrMag < 0.0001f) return true;
 
             // Normalize via fast InvSqrt
             float invMag = TypeExtensions.InvSqrt(sqrMag);
-            Vector3 dir  = delta * invMag;
+            Vector3 dir = delta * invMag;
 
             // Advance by speed * dt, but don’t overshoot
-            float step    = Model.Speed * TimeManager.DeltaTime;
+            float step = Model.Speed * TimeManager.DeltaTime;
             float stepSqr = step * step;
             if (stepSqr >= sqrMag)
             {
                 // Snap to exact target
                 transform.position = target;
-                Mesh.forward  = dir;
+                Mesh.forward = dir;
                 return true;
             }
 
@@ -93,7 +93,7 @@ namespace TowerDefense.Controller
             Vector3 next = start + dir * step;
             next.y = maintainY;
             transform.position = next;
-            Mesh.forward  = dir;
+            Mesh.forward = dir;
             return false;
         }
 

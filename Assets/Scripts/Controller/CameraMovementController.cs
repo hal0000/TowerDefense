@@ -1,140 +1,168 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.Controls;
-using TouchPhase = UnityEngine.InputSystem.TouchPhase;
+using UnityEngine.InputSystem.EnhancedTouch;
+using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
+using TowerDefense.Core; // GridManager
 
 namespace TowerDefense.Controller
 {
     [RequireComponent(typeof(Camera))]
     public class CameraMovementController : MonoBehaviour
     {
-        [Header("Pan Settings")] public float PanSpeedTouch = 0.01f; // tek parmakla sürükleme hızı (mobil)
+        [Header("Grid Reference")]
+        [SerializeField] private GridManager _gridManager;
 
-        public float PanSpeedMouse = 0.1f; // sağ‐tık sürükleme hızı (PC)
+        [Header("Pan Settings")]
+        [Tooltip("Tek parmakla sürükleme hızı")]
+        public float panSpeedTouch = 0.01f;
 
-        [Header("Zoom Settings")] public float ZoomSpeedTouch = 0.02f; // iki parmak pinch hassasiyeti (mobil)
-
-        public float ZoomSpeedWheel = 1f; // mouse wheel hassasiyeti (PC)
-        public float MinZoom = 5f;
-        public float MaxZoom = 20f;
+        [Header("Zoom Settings")]
+        [Tooltip("İki parmakla pinch zoom hassasiyeti")]
+        public float zoomSpeedTouch = 0.5f;
+        [Tooltip("Minimum ortographic size")]
+        public float minZoom = 2f;
+        private float maxZoom;
 
         private Camera _cam;
-        private bool _isPanningMouse;
-        private Vector3 _lastPanPos;
-        private float _lastPinchDist;
+        private Vector2 _lastPanPos;
 
-        private void Awake()
+        private bool _isPinching;
+        private float _lastPinchDist;
+        private Vector2 _zoomCenterScreen;
+        private Vector3 _zoomCenterWorld;
+
+        void Awake()
         {
-            // TouchSimulation.Enable(); // mouse/pen → Touchscreen
-            // EnhancedTouchSupport.Enable(); // EnhancedTouch API’leriyle de çalışır
+            // Enhanced Touch System’i etkinleştir
+            EnhancedTouchSupport.Enable();
+            TouchSimulation.Enable();
+
             _cam = GetComponent<Camera>();
             _cam.orthographic = true;
         }
 
-        private void LateUpdate()
+        void Start()
         {
-#if UNITY_IOS || UNITY_ANDROID
-            // Mobil: tek parmak pan, iki parmak pinch
-            if (Touchscreen.current != null && Touchscreen.current.touches.Count > 0)
-            {
-                if (Touchscreen.current.touches.Count == 1)
-                    HandleTouchPan();
-                else if (Touchscreen.current.touches.Count == 2)
-                    HandlePinchZoom();
-            }
-
-            HandleScrollZoom(); // bazı mobil trackpad'ler de scroll gönderebilir
-
-#elif UNITY_STANDALONE || UNITY_EDITOR || UNITY_WEBGL
-                // // PC/Editör/WebGL: sağ‐tık drag + scroll wheel
-                // HandleMousePan();
-                // HandleScrollZoom();
-#endif
+            // Grid boyutuna göre zoom sınırlarını hesapla
+            RecalculateZoomLimits();
+            // Kamera pozisyonunu clamp’le başlangıçta
+            //ClampCameraPosition();
         }
 
-        private void HandleMousePan()
+        void Update()
         {
-            if (Mouse.current == null) return;
+            var touches = Touch.activeTouches;
 
-            if (Mouse.current.rightButton.wasPressedThisFrame)
+            if (touches.Count == 1)
             {
-                _isPanningMouse = true;
-                _lastPanPos = Mouse.current.position.ReadValue();
+                // Tek parmak: pan
+                _isPinching = false;
+                HandlePan(touches[0]);
             }
-            else if (Mouse.current.rightButton.wasReleasedThisFrame)
+            else if (touches.Count == 2)
             {
-                _isPanningMouse = false;
+                // İki parmak: pinch zoom
+                HandlePinch(touches[0], touches[1]);
             }
-
-            if (_isPanningMouse)
-            {
-                Vector3 curr = Mouse.current.position.ReadValue();
-                Vector3 delta = curr - _lastPanPos;
-                PanCamera(delta, PanSpeedMouse);
-                _lastPanPos = curr;
-            }
+            // Diğer durumlarda modları temizle
         }
 
-        private void HandleTouchPan()
+        private void HandlePan(Touch t)
         {
-            TouchControl touch = Touchscreen.current.touches[0];
-            TouchPhase phase = touch.phase.ReadValue();
-            Vector2 pos = touch.position.ReadValue();
-
-            if (phase == TouchPhase.Began)
+            if (t.phase == UnityEngine.InputSystem.TouchPhase.Began)
             {
-                _lastPanPos = pos;
+                _lastPanPos = t.screenPosition;
             }
-            else if (phase == TouchPhase.Moved)
+            else if (t.phase == UnityEngine.InputSystem.TouchPhase.Moved)
             {
-                Vector3 delta = (Vector3)pos - _lastPanPos;
-                PanCamera(delta, PanSpeedTouch);
-                _lastPanPos = pos;
+                Vector2 delta = t.screenPosition - _lastPanPos;
+                // Ekran delta’sını dünya delta’sına çevir
+                Vector3 move = new Vector3(-delta.x * panSpeedTouch, 0f, -delta.y * panSpeedTouch);
+                _cam.transform.position += move;
+                _lastPanPos = t.screenPosition;
+            }
+            else if (t.phase == UnityEngine.InputSystem.TouchPhase.Ended ||
+                     t.phase == UnityEngine.InputSystem.TouchPhase.Canceled)
+            {
+                //ClampCameraPosition();
             }
         }
 
-        private void HandlePinchZoom()
+        private void HandlePinch(Touch t0, Touch t1)
         {
-            TouchControl t0 = Touchscreen.current.touches[0];
-            TouchControl t1 = Touchscreen.current.touches[1];
-            Vector2 p0 = t0.position.ReadValue();
-            Vector2 p1 = t1.position.ReadValue();
-            float dist = Vector2.Distance(p0, p1);
+            float dist = Vector2.Distance(t0.screenPosition, t1.screenPosition);
+            Vector2 mid = (t0.screenPosition + t1.screenPosition) * 0.5f;
 
-            if (t1.phase.ReadValue() == TouchPhase.Began)
+            if (!_isPinching ||
+                t0.phase == UnityEngine.InputSystem.TouchPhase.Began ||
+                t1.phase == UnityEngine.InputSystem.TouchPhase.Began)
             {
+                // Pinch başlarken referans mesafe ve merkez
+                _isPinching = true;
                 _lastPinchDist = dist;
+                _zoomCenterScreen = mid;
+                _zoomCenterWorld = ScreenToWorldPlane(mid);
                 return;
             }
 
-            float delta = dist - _lastPinchDist;
-            ZoomCamera(delta, ZoomSpeedTouch);
-            _lastPinchDist = dist;
+            if (_isPinching &&
+               (t0.phase == UnityEngine.InputSystem.TouchPhase.Moved ||
+                t1.phase == UnityEngine.InputSystem.TouchPhase.Moved))
+            {
+                float delta = dist - _lastPinchDist;
+                float newSize = _cam.orthographicSize - delta * zoomSpeedTouch * Time.deltaTime;
+                _cam.orthographicSize = Mathf.Clamp(newSize, minZoom, maxZoom);
+                _lastPinchDist = dist;
+
+                // Zoom merkezini sabit tutmak için pozisyon düzelt
+                Vector3 newWorld = ScreenToWorldPlane(_zoomCenterScreen);
+                Vector3 shift = _zoomCenterWorld - newWorld;
+                _cam.transform.position += shift;
+            }
+            else if (t0.phase == UnityEngine.InputSystem.TouchPhase.Ended ||
+                     t1.phase == UnityEngine.InputSystem.TouchPhase.Ended ||
+                     t0.phase == UnityEngine.InputSystem.TouchPhase.Canceled ||
+                     t1.phase == UnityEngine.InputSystem.TouchPhase.Canceled)
+            {
+                _isPinching = false;
+                //ClampCameraPosition();
+            }
         }
 
-        private void HandleScrollZoom()
+        // Ekran koordinatını world üzerindeki grid düzlemine çevirir
+        private Vector3 ScreenToWorldPlane(Vector2 screenPos)
         {
-            if (Mouse.current == null) return;
-            float scroll = Mouse.current.scroll.ReadValue().y;
-            if (Mathf.Abs(scroll) > 0.01f)
-                ZoomCamera(scroll, ZoomSpeedWheel);
+            Ray ray = _cam.ScreenPointToRay(screenPos);
+            float planeY = _cam.transform.position.y;
+            float t = (planeY - ray.origin.y) / ray.direction.y;
+            return ray.origin + ray.direction * t;
         }
 
-        private void PanCamera(Vector3 delta, float speed)
+        // Grid boyutuna göre maxZoom değeri hesaplanır
+        private void RecalculateZoomLimits()
         {
-            Vector3 right = transform.right;
-            right.y = 0;
-            Vector3 forward = transform.forward;
-            forward.y = 0;
-            Vector3 move = -delta.x * right * speed
-                           - delta.y * forward * speed;
-            transform.position += move;
+            // Yarı yükseklik limiti: grid yüksekliğinin yarısı
+            float hLimit = _gridManager.Height / 2f;
+            // Yarı genişlik limiti: grid genişliği / (2 * aspect)
+            float wLimit = _gridManager.Width / (2f * _cam.aspect);
+            maxZoom = Mathf.Min(hLimit, wLimit);
         }
 
-        private void ZoomCamera(float delta, float speed)
+        // Kameranın x/z pozisyonunu grid sınırları içinde tutar
+        private void ClampCameraPosition()
         {
-            float newSize = _cam.orthographicSize - delta * speed;
-            _cam.orthographicSize = Mathf.Clamp(newSize, MinZoom, MaxZoom);
+            float halfH = _cam.orthographicSize;
+            float halfW = halfH * _cam.aspect;
+
+            // 0.5f ekleyerek hücre merkezine yaslanıyoruz
+            float minX = halfW - 0.5f;
+            float maxX = _gridManager.Width - halfW - 0.5f;
+            float minZ = halfH - 0.5f;
+            float maxZ = _gridManager.Height - halfH - 0.5f;
+
+            Vector3 p = _cam.transform.position;
+            p.x = Mathf.Clamp(p.x, minX, maxX);
+            p.z = Mathf.Clamp(p.z, minZ, maxZ);
+            _cam.transform.position = p;
         }
     }
 }

@@ -31,6 +31,7 @@ namespace TowerDefense.Core
         private bool _startHover;
         private TowerModel _towerModel;
 
+        public bool CanIMoveCamera => _hovering;
         private void Awake()
         {
             _cam = Camera.main;
