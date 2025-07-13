@@ -47,7 +47,15 @@ namespace TowerDefense.Controller
         private void OnGameStateChanged(Enums.GameState state)
         {
             _lastState = state;
-            if (state == Enums.GameState.Playing) StartNextWave();
+            switch (state)
+            {
+                case Enums.GameState.Playing:
+                    StartNextWave();
+                    break;
+                case Enums.GameState.Start:
+                    _currentWaveIndex = 0;
+                    break;
+            }
         }
 
         private void StartNextWave()
