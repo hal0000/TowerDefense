@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using TowerDefense.Core;
 using TowerDefense.UI.Binding;
@@ -9,101 +10,95 @@ namespace TowerDefense.Model
     [Serializable]
     public class TowerModel : BaseModel, ISerializationCallbackReceiver
     {
+        // --- Binding ---
         public Bindable<string> NameBinder { get; } = new();
-        public Bindable<int> GoldBinder { get; } = new();
+        public Bindable<int>    GoldBinder { get; } = new();
 
-
-        /// <summary>
-        ///     Number of rows in the footprint.
-        /// </summary>
-        public int Rows => _rows;
-
-        /// <summary>
-        ///     Number of cols in the footprint.
-        /// </summary>
-        public int Cols => _cols;
-
-        /// <summary>
-        ///     Tower’s current grid position, packed.
-        /// </summary>
-        public int PackedPosition => _packedPosition;
-
-        /// <summary>
-        ///     Unpacked X
-        /// </summary>
-        public int X => CoordPacker.UnpackX(_packedPosition);
-
-        /// <summary>
-        ///     Unpacked Y
-        /// </summary>
-        public int Y => CoordPacker.UnpackY(_packedPosition);
-
-        public void OnAfterDeserialize()
-        {
-            // build our fast-access byte[] from the string rows
-            GoldBinder.Value = Gold;
-            NameBinder.Value = Name;
-            _rows = Footprint?.Length ?? 0;
-            _cols = _rows > 0 ? Footprint[0].Length : 0;
-            _grid = new byte[_rows * _cols];
-
-            for (int r = 0; r < _rows; r++)
-            {
-                string row = Footprint[r];
-                for (int c = 0; c < _cols; c++)
-                {
-                    _grid[r * _cols + c] = (byte)(row[c] == '1' ? 1 : 0);
-                }
-            }
-        }
-
-        public void OnBeforeSerialize()
-        {
-        }
-
-        /// <summary>
-        ///     Get cell value (0 or 1) at (r,c).
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public byte GetCell(int r, int c)
-        {
-            return _grid[r * _cols + c];
-        }
-
-        /// <summary>
-        ///     Set tower’s position on the grid.
-        /// </summary>
-        public void SetPosition(int packed)
-        {
-            _packedPosition = packed;
-        }
-
-        #region JSONKEYS
-
+        // --- JSON-serializable fields ---
         public int Index;
         public string Name;
         public int Gold;
-        public string[] Footprint;
+
+        /// <summary>
+        /// Packed footprint: 
+        ///   [0] = header  (Rows<<16 | Cols)
+        ///   [1 und weiter] = bitmask for each row (LSB = column 0)
+        /// /// </summary>
+        public int[] FootprintPacked;
         public int Range;
         public int Damage;
         public int Level;
         public int FireRate;
 
-        #endregion
+        /// <summary>
+        /// Tower’s current grid position, packed via CoordPacker.
+        /// </summary>
+        public int PackedPosition;
 
-        #region RUNTIME
-
+        // --- Runtime-only caches (non-serialized) ---
         [NonSerialized] private int _rows;
         [NonSerialized] private int _cols;
-        [NonSerialized] private byte[] _grid; // flat (row*cols + col)
-        [NonSerialized] private int _packedPosition;
+        public int Rows => _rows;
+        public int Cols => _cols;
+        public int X => CoordPacker.UnpackX(PackedPosition);
+        public int Y => CoordPacker.UnpackY(PackedPosition);
 
-        #endregion
+        public void OnBeforeSerialize() { }
+
+        void ISerializationCallbackReceiver.OnAfterDeserialize()
+        {
+            NameBinder.Value = Name;
+            GoldBinder.Value = Gold;
+
+            if (FootprintPacked == null || FootprintPacked.Length == 0)
+            {
+                // default 1x1 boş
+                FootprintPacked = new[] { (1 << 16) | 1, 0 };
+            }
+
+            int header = FootprintPacked[0];
+            _rows = CoordPacker.UnpackX(header);
+            _cols = CoordPacker.UnpackY(header);
+
+            // satır maskelerini kontrol et
+            if (FootprintPacked.Length != _rows + 1)
+            {
+                var newArr = new int[_rows + 1];
+                Array.Copy(FootprintPacked, newArr, Math.Min(FootprintPacked.Length, _rows+1));
+                FootprintPacked = newArr;
+            }
+        }
+
+        /// <summary>
+        /// Get cell value (0 or 1) at (r,c) by unpacking the bitmask.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public byte GetCell(int r, int c) => (byte)((FootprintPacked[1 + r] >> c) & 1);
+
+        /// <summary>
+        /// Set cell (r,c) on/off in the bitmask.
+        /// </summary>
+        public void SetCell(int r, int c, byte val)
+        {
+            int idx  = 1 + r; // index of that row’s mask in the array
+            int mask = FootprintPacked[idx];
+            if (val == 1) mask |=  (1 << c);
+            else mask &= ~(1 << c);
+            FootprintPacked[idx] = mask;
+        }
+
+        /// <summary>
+        /// Set tower’s packed grid position.
+        /// </summary>
+        public void SetPosition(int packed)
+        {
+            PackedPosition = packed;
+        }
     }
 
     [Serializable]
     public class TowerModelList
     {
-        public TowerModel[] Templates;
+        public List<TowerModel> Templates;
     }
 }
