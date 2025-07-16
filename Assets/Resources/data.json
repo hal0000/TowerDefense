@@ -1,0 +1,99 @@
+{
+    "Templates": [
+        {
+            "Index": 0,
+            "Name": "Kunst-Team",
+            "Gold": 5000,
+            "FootprintPacked": [
+                196611,
+                7,
+                2,
+                2
+            ],
+            "Range": 3,
+            "Damage": 40,
+            "Level": 1,
+            "FireRate": 2,
+            "PackedPosition": 0
+        },
+        {
+            "Index": 1,
+            "Name": "QA-Team",
+            "Gold": 10000,
+            "FootprintPacked": [
+                196610,
+                1,
+                1,
+                3
+            ],
+            "Range": 4,
+            "Damage": 25,
+            "Level": 1,
+            "FireRate": 3,
+            "PackedPosition": 0
+        },
+        {
+            "Index": 2,
+            "Name": "Entwicklung",
+            "Gold": 5000,
+            "FootprintPacked": [
+                131075,
+                6,
+                3
+            ],
+            "Range": 4,
+            "Damage": 40,
+            "Level": 1,
+            "FireRate": 2,
+            "PackedPosition": 0
+        },
+        {
+            "Index": 3,
+            "Name": "Projektmanagement",
+            "Gold": 25000,
+            "FootprintPacked": [
+                196611,
+                5,
+                5,
+                7
+            ],
+            "Range": 8,
+            "Damage": 100,
+            "Level": 1,
+            "FireRate": 3,
+            "PackedPosition": 0
+        },
+        {
+            "Index": 4,
+            "Name": "Praktikum",
+            "Gold": 1000,
+            "FootprintPacked": [
+                196609,
+                1,
+                1,
+                1
+            ],
+            "Range": 1,
+            "Damage": 15,
+            "Level": 1,
+            "FireRate": 3,
+            "PackedPosition": 0
+        },
+        {
+            "Index": 5,
+            "Name": "Kundensupport",
+            "Gold": 10000,
+            "FootprintPacked": [
+                196611,
+                2,
+                7,
+                2
+            ],
+            "Range": 4,
+            "Damage": 50,
+            "Level": 1,
+            "FireRate": 3,
+            "PackedPosition": 0
+        }
+    ]
+}

@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.Linq;
+using TowerDefense.Core;
 using TowerDefense.Model;
 using UnityEngine;
 
@@ -9,11 +11,22 @@ namespace TowerDefense.Network
     /// </summary>
     public class Api
     {
+        
         public List<TowerModel> GetBuildingTypes()
         {
-            TowerModelList wrapper = JsonUtility.FromJson<TowerModelList>(EmbeddedBuildingData.TowerJson);
+            var textAsset = Resources.Load<TextAsset>("data");
+            if (textAsset == null)
+            {
+                LoggerExtra.LogError("Could not load Resources/data.json");
+                return new List<TowerModel>();
+            }
+            var wrapper = JsonUtility.FromJson<TowerModelList>(textAsset.text);
+            if (wrapper?.Templates == null) return new List<TowerModel>();
             return new List<TowerModel>(wrapper.Templates);
+            // TowerModelList wrapper = JsonUtility.FromJson<TowerModelList>(EmbeddedBuildingData.TowerJson);
+            // return new List<TowerModel>(wrapper.Templates);
         }
+    
 
         public List<EnemyModel> GetEnemyTypes()
         {

@@ -1,0 +1,15 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15fa762f1aa83407a8087502c5ecf6d2, type: 3}
+  m_Name: TowerPrefabReference
+  m_EditorClassIdentifier: 
+  CubePrefab: {fileID: 1840235556420889241, guid: 533c7dd3cc8a64408b33c8e6fc596e17, type: 3}
