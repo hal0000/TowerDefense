@@ -3479,7 +3479,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _prefab: {fileID: 889578651}
-  _poolSize: 100
+  _initialSize: 32
 --- !u!1 &634400812
 GameObject:
   m_ObjectHideFlags: 0
@@ -10168,13 +10168,13 @@ MonoBehaviour:
   EnemyTypeDefinitions:
   - Type: 0
     Prefab: {fileID: 1798312777}
-    PoolSize: 50
+    PoolSize: 32
   - Type: 1
     Prefab: {fileID: 1932237479}
-    PoolSize: 50
+    PoolSize: 32
   - Type: 2
     Prefab: {fileID: 45022053}
-    PoolSize: 50
+    PoolSize: 32
 --- !u!1 &1980554440
 GameObject:
   m_ObjectHideFlags: 0
