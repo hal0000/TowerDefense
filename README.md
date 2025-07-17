@@ -87,21 +87,94 @@ Raycasts werden genutzt, um Positionen zu bestimmen.
 Türme werden in Echtzeit auf valide Positionen geprüft und visuell dargestellt.
 Validierungen und UI-Feedback bei Interaktionen.
 
-#### 5. TowerPrefabGenerator:
+#### 5. Tower-Konfigurator – Vollständige Funktionsübersicht
+#### Öffnen/Schließen
+   
+	•	Über Fenster -> Tower-Konfigurator starten.  
+	•	Mit CLOSE TOWER CONFIG EDITOR jederzeit schließen.
+#### Bestehende Türme durchsuchen
+   
+	•	Scrollbare Liste aller Einträge aus `Resources/data.json`.  
+	•	Per Klick lädt man einen Turm in die Editierfelder.
+#### Neuen Turm hinzufügen
+   
+	•	Add New Tower erzeugt eine leere Vorlage mit nächster freier Index-Nummer.  
+	•	Wechselt automatisch in den Bearbeitungsmodus.
+#### Turm-Statistiken bearbeiten
+   
+	•	Index (ganzzahlig, auto-vergeben, aber editierbar)  
+	•	Name (Text)  
+	•	Gold (Kosten)  
+	•	Range, Damage, Level, FireRate  
+#### Fußabdruck-Editor
+   
+	•	Dynamische Eingabe von Rows und Cols für das Raster.  
+	•	Resize erstellt das Toggle-Grid neu.  
+	•	Zellen per Klick an-/ausschalten, um die Form zu gestalten.  
+	•	Im Hintergrund wird alles als Bitmaske gespeichert für maximale Laufzeit-Effizienz.
+
+#### 3D-Vorschau  
+	•	Oben ein Würfel-Prefab zuweisen.  
+	•	Live-Rendering des Fußabdrucks mit korrekter Zentrierung und Kameraeinstellung.  
+	•	Änderungen am Raster zeigen sich sofort im Vorschaufenster.
+
+#### Speichern / Löschen / Abbrechen
+   
+	•	Save schreibt Änderungen direkt in `data.json` und aktualisiert die Liste.  
+	•	Delete entfernt den aktuellen Turm, reindiziert nachfolgende Indizes automatisch und speichert.  
+	•	Cancel stellt den zuletzt gespeicherten Zustand wieder her (oder verwirft ein neues, nicht gespeichertes Objekt).
+
+#### Automatische Reindizierung
+    
+	•	Beim Löschen verschieben sich alle höheren Indizes um eins nach unten – keine Lücken.  
+	•	Beim Hinzufügen wird der nächste freie Index am Ende verwendet.
+
+#### Undo-Bereitschaft
+    
+	•	Jeder Bearbeitungsbeginn legt einen JSON-Snapshot an.  
+	•	Abbrechen stellt exakt diese Vorgängerversion wieder her.
+
+#### Designer-freundliche Voreinstellungen
+    
+ 	•	Fehlt `data.json` oder ist es leer, erscheint automatisch eine leere Liste.  
+ 	•	Leere Fußabdrücke standardmäßig als 1×1-Raster definiert.
+
+#### Robuste Fehlerbehandlung
+    
+ 	•	Ungültiges oder fehlendes JSON -> Fallback auf leere Liste, keine Abstürze.  
+ 	•	Fehlendes Würfel-Prefab deaktiviert nur die Vorschau, statt das Editor-Fenster unbrauchbar zu machen.
+
+#### Workflow-Integration
+    
+ 	•	Nutzt dasselbe Prefab für Vorschau wie im Spiel.  
+ 	•	Designer erstellen und optimieren Fußabdrücke, ohne Szenen zu öffnen.  
+ 	•	Komplett drop-in: Einfach das Skript im `Editor/` ablegen und `data.json` in `Resources/` bereitstellen.
+
+
+### Designer-Anwendung
+
+1. **Starten**: Windows -> Tower-Configuration  
+2. **Auswählen** eines vorhandenen Turms oder **Neuen hinzufügen**  
+3. **Stats bearbeiten** im Formular  
+4. **Fußabdruck anpassen** über Raster und Zellen  
+5. **Vorschau** in Echtzeit beobachten  
+6. **Save** zum Übernehmen, **Cancel** zum Verwerfen, **Delete** zum Entfernen  
+
+#### 6. TowerPrefabGenerator:
 Automatische Erstellung von Turm-Prefabs basierend auf TowerModels. Platziert automatisch Visualisierungs-Cubes für die Footprint-Darstellung der Türme.
 
 Nutzen:
 
 	•	Schnelle Generierung visueller Repräsentationen von Türmen.
 	•	Einheitliches Management von Turm-Instanzen.
-#### 6. Pooling-System (EnemyPool & BulletPool):
+#### 7. Pooling-System (EnemyPool & BulletPool):
 Effiziente Wiederverwendung von Gegner- und Geschossobjekten.
 
 Vorteile:
 
 	•	Reduzierter Speicherverbrauch und Garbage Collection.
 	•	Verbesserung der Spielperformance bei hoher Gegner- und Schussrate.
-#### 7. EventManager:
+#### 8. EventManager:
 Implementiert eine Event-gesteuerte Architektur. Ermöglicht eine lose Kopplung der Komponenten über Ereignisse (GameState-Änderungen, Spieleraktionen).
 
 Nutzen:
